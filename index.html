@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Обувной Магазин</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Обувной Магазин</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <!-- PWA Manifest -->
-  <link
-    rel="manifest"
-    href='data:application/json;charset=utf-8,{
+    <!-- PWA Manifest -->
+    <link
+      rel="manifest"
+      href='data:application/json;charset=utf-8,{
       "name": "Обувной Магазин",
       "short_name": "Обувь",
       "start_url": ".",
@@ -22,541 +22,884 @@
       "background_color": "#121212",
       "theme_color": "#121212"
     }'
-  />
+    />
 
-  <style>
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      height: 4px;
-      width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #3f3f46;
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body class="pb-10">
-  <!-- Шапка -->
-  <header class="sticky top-0 z-20 bg-[#121212]/95 backdrop-blur border-b border-zinc-800 px-3 py-3 flex items-center justify-between">
-    <!-- Левая часть: Статистика, Вход/Выход Админа, Импорт CSV (только для админа) -->
-    <div class="flex items-center space-x-2">
-      <button onclick="openStatsModal()" title="Статистика" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-blue-400 flex items-center justify-center">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-      </button>
-
-      <button id="auth-action-btn" onclick="handleAuthClick()" class="text-xs font-semibold px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-blue-400">
-        Войти как админ
-      </button>
-
-      <label id="import-csv-btn" title="Импорт CSV из Glide" class="hidden cursor-pointer text-xs font-semibold px-2.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400">
-        <span>CSV</span>
-        <input type="file" accept=".csv,text/csv" onchange="handleCsvImport(event)" class="hidden" />
-      </label>
-    </div>
-
-    <!-- Правая часть: Фильтр и Добавление товара -->
-    <div class="flex items-center space-x-2">
-      <button onclick="openFilter()" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-200 relative">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-        </svg>
-        <span id="filter-indicator" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
-      </button>
-
-      <button id="add-product-btn" onclick="openAddModal()" class="hidden items-center space-x-1 bg-blue-600 hover:bg-blue-500 text-white font-medium px-3.5 py-2.5 rounded-xl text-sm transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-        </svg>
-        <span>Add</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Сетка товаров -->
-  <main class="p-3">
-    <div id="product-grid" class="grid grid-cols-2 gap-3"></div>
-  </main>
-
-  <!-- Модальное окно Статистики -->
-  <div id="stats-modal" class="fixed inset-0 bg-black/80 z-50 hidden overflow-y-auto">
-    <div class="min-h-screen p-4 max-w-lg mx-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Статистика остатков</h2>
-        <button onclick="closeStatsModal()" class="p-1 text-zinc-400 hover:text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    <style>
+      body {
+        background-color: #121212;
+        color: #ffffff;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        height: 4px;
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #3f3f46;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body class="pb-10">
+    <!-- Шапка -->
+    <header
+      class="sticky top-0 z-20 bg-[#121212]/95 backdrop-blur border-b border-zinc-800 px-3 py-3 flex items-center justify-between"
+    >
+      <!-- Левая часть: Статистика, Вход/Выход Админа, Импорт CSV (только для админа) -->
+      <div class="flex items-center space-x-2">
+        <button
+          onclick="openStatsModal()"
+          title="Статистика"
+          class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-blue-400 flex items-center justify-center"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
         </button>
+
+        <button
+          id="auth-action-btn"
+          onclick="handleAuthClick()"
+          class="text-xs font-semibold px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-blue-400"
+        >
+          Войти как админ
+        </button>
+
+        <!-- <label
+          id="import-csv-btn"
+          title="Импорт CSV из Glide"
+          class="hidden cursor-pointer text-xs font-semibold px-2.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400"
+        >
+          <span>CSV</span>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onchange="handleCsvImport(event)"
+            class="hidden"
+          />
+        </label> -->
       </div>
 
-      <!-- 1. Параметры/Фильтры для статистики -->
-      <div class="space-y-4 mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-        <div>
-          <label class="text-xs font-semibold text-zinc-400 mb-2 block">Тип</label>
-          <div id="stats-types" class="flex flex-wrap gap-1.5"></div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-zinc-400 mb-2 block">Пол</label>
-          <div id="stats-genders" class="flex flex-wrap gap-1.5"></div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-zinc-400 mb-2 block">Цвет</label>
-          <div id="stats-colors" class="flex flex-wrap gap-1.5"></div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-zinc-400 mb-2 block">Параметры</label>
-          <div id="stats-params" class="flex flex-wrap gap-1.5"></div>
-        </div>
-      </div>
-
-      <!-- 2. График остатков -->
-      <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-sm font-semibold text-zinc-300">График по размерам (16–41)</h3>
-          <span id="selected-chart-info" class="text-xs text-blue-400 font-medium">Нажмите на столбец</span>
-        </div>
-
-        <div class="overflow-x-auto custom-scrollbar pb-2">
-          <div id="chart-container" class="min-w-[650px] h-48 relative"></div>
-        </div>
-      </div>
-
-      <!-- 3. Список количества по размерам -->
-      <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-        <h3 class="text-sm font-semibold text-zinc-300 mb-3">Количество по размерам</h3>
-        <div id="stats-list" class="grid grid-cols-2 gap-2 text-sm"></div>
-      </div>
-
-      <!-- 4. Итоговый блок в самом низу -->
-      <div id="stats-summary" class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2"></div>
-    </div>
-  </div>
-
-  <!-- Модальное окно Входа (Admin Auth) -->
-  <div id="auth-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm">
-      <h2 class="text-lg font-bold mb-4">Вход администратора</h2>
-      <input type="email" id="auth-email" placeholder="Email" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-blue-500"/>
-      <input type="password" id="auth-password" placeholder="Пароль" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-blue-500"/>
-      <div class="flex space-x-2">
-        <button onclick="closeAuthModal()" class="w-1/2 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-medium text-sm">Отмена</button>
-        <button onclick="loginAdmin()" class="w-1/2 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm">Войти</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Фильтр (Bottom Sheet) -->
-  <div id="filter-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex flex-col justify-end">
-    <div class="bg-zinc-900 border-t border-zinc-800 rounded-t-3xl p-5 max-h-[85vh] flex flex-col">
-      <div class="flex justify-between items-center pb-4 border-b border-zinc-800">
-        <h3 class="text-lg font-bold">Фильтр</h3>
-        <button onclick="closeFilter()" class="p-1 text-zinc-400 hover:text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      <!-- Правая часть: Фильтр и Добавление товара -->
+      <div class="flex items-center space-x-2">
+        <button
+          onclick="openFilter()"
+          class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-200 relative"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+            />
           </svg>
+          <span
+            id="filter-indicator"
+            class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-blue-500 rounded-full"
+          ></span>
+        </button>
+
+        <button
+          id="add-product-btn"
+          onclick="openAddModal()"
+          class="hidden items-center space-x-1 bg-blue-600 hover:bg-blue-500 text-white font-medium px-3.5 py-2.5 rounded-xl text-sm transition"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2.5"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          <span>Add</span>
         </button>
       </div>
+    </header>
 
-      <div class="overflow-y-auto py-4 space-y-5 custom-scrollbar flex-1">
-        <div>
-          <label class="text-sm font-semibold text-zinc-400 mb-2 block">Тип</label>
-          <div id="filter-type-group" class="flex flex-wrap gap-2"></div>
-        </div>
-        <div>
-          <label class="text-sm font-semibold text-zinc-400 mb-2 block">Пол</label>
-          <div id="filter-gender-group" class="flex flex-wrap gap-2"></div>
-        </div>
-        <div>
-          <label class="text-sm font-semibold text-zinc-400 mb-2 block">Цвет</label>
-          <div id="filter-color-group" class="flex flex-wrap gap-2"></div>
-        </div>
-        <div>
-          <label class="text-sm font-semibold text-zinc-400 mb-2 block">Параметры</label>
-          <div id="filter-params-group" class="flex flex-wrap gap-2"></div>
-        </div>
-        <div>
-          <label class="text-sm font-semibold text-zinc-400 mb-2 block">Размеры</label>
-          <div id="filter-sizes-group" class="grid grid-cols-6 gap-2"></div>
-        </div>
-      </div>
+    <!-- Сетка товаров -->
+    <main class="p-3">
+      <div id="product-grid" class="grid grid-cols-2 gap-1"></div>
+    </main>
 
-      <div class="pt-4 border-t border-zinc-800 grid grid-cols-2 gap-3">
-        <button onclick="resetFilters()" class="py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl text-sm">Очистить все</button>
-        <button onclick="applyFilters()" class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm">Готово</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Окно Просмотра Товара -->
-  <div id="product-detail-modal" class="fixed inset-0 bg-black/90 z-50 hidden overflow-y-auto">
-    <div class="min-h-screen p-4 flex flex-col justify-between max-w-lg mx-auto">
-      <div>
-        <button onclick="closeProductDetail()" class="p-2 bg-zinc-800/80 rounded-full text-white mb-4">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-          </svg>
-        </button>
-        <div id="detail-content"></div>
-      </div>
-
-      <div id="admin-detail-actions" class="hidden space-y-3 pt-6 border-t border-zinc-800">
-        <button onclick="openEditModalCurrent()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl text-sm">Изменить</button>
-        <button onclick="deleteCurrentProduct()" class="w-full py-3 bg-zinc-800 text-red-500 hover:bg-zinc-700 font-semibold rounded-xl text-sm">Удалить</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Модалка Добавления / Изменения Товара -->
-  <div id="form-modal" class="fixed inset-0 bg-black/90 z-50 hidden overflow-y-auto">
-    <div class="min-h-screen p-4 max-w-lg mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h2 id="form-title" class="text-xl font-bold">Добавить позицию</h2>
-        <button onclick="closeFormModal()" class="p-1 text-zinc-400 hover:text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="space-y-5">
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-1">Цена (в тысячах, например 200 = 200 000)</label>
-          <input type="number" id="form-price" placeholder="например 200" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"/>
+    <!-- Модальное окно Статистики -->
+    <div
+      id="stats-modal"
+      class="fixed inset-0 bg-black/80 z-50 hidden overflow-y-auto"
+    >
+      <div class="min-h-screen p-4 max-w-lg mx-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Статистика остатков</h2>
+          <button
+            onclick="closeStatsModal()"
+            class="p-1 text-zinc-400 hover:text-white"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-1">Фото товара</label>
-          <input type="file" accept="image/*" onchange="handleImageUpload(event, 'photo')" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-300"/>
-          <div id="preview-photo" class="mt-2 hidden h-24 w-24 rounded-xl overflow-hidden border border-zinc-700">
-            <img src="" class="w-full h-full object-cover"/>
+        <!-- 1. Параметры/Фильтры для статистики -->
+        <div
+          class="space-y-4 mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800"
+        >
+          <div>
+            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+              >Тип</label
+            >
+            <div id="stats-types" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+              >Пол</label
+            >
+            <div id="stats-genders" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+              >Цвет</label
+            >
+            <div id="stats-colors" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+              >Параметры</label
+            >
+            <div id="stats-params" class="flex flex-wrap gap-1.5"></div>
           </div>
         </div>
 
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-1">Расположение на складе (фото)</label>
-          <input type="file" accept="image/*" onchange="handleImageUpload(event, 'locationPhoto')" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-300"/>
-          <div id="preview-locationPhoto" class="mt-2 hidden h-24 w-24 rounded-xl overflow-hidden border border-zinc-700">
-            <img src="" class="w-full h-full object-cover"/>
+        <!-- 2. График остатков -->
+        <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold text-zinc-300">
+              График по размерам (16–41)
+            </h3>
+            <span
+              id="selected-chart-info"
+              class="text-xs text-blue-400 font-medium"
+              >Нажмите на столбец</span
+            >
+          </div>
+
+          <div class="overflow-x-auto custom-scrollbar pb-2">
+            <div id="chart-container" class="min-w-[650px] h-48 relative"></div>
           </div>
         </div>
 
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-2">Тип (выберите один или несколько)</label>
-          <div id="form-type-group" class="flex flex-wrap gap-2"></div>
+        <!-- 3. Список количества по размерам -->
+        <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+          <h3 class="text-sm font-semibold text-zinc-300 mb-3">
+            Количество по размерам
+          </h3>
+          <div id="stats-list" class="grid grid-cols-2 gap-2 text-sm"></div>
         </div>
 
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-2">Пол</label>
-          <div id="form-gender-group" class="flex flex-wrap gap-2"></div>
-        </div>
+        <!-- 4. Итоговый блок в самом низу -->
+        <div
+          id="stats-summary"
+          class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2"
+        ></div>
+      </div>
+    </div>
 
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-2">Цвет</label>
-          <div id="form-color-group" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-2">Параметры</label>
-          <div id="form-params-group" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-2">Размеры</label>
-          <div id="form-sizes-group" class="grid grid-cols-6 gap-2"></div>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-zinc-300 block mb-2">Доп. размеры</label>
-          <div id="form-extra-sizes-group" class="grid grid-cols-6 gap-2"></div>
-        </div>
-
-        <div class="pt-4 grid grid-cols-2 gap-3">
-          <button onclick="closeFormModal()" class="py-3 bg-zinc-800 text-zinc-300 font-semibold rounded-xl text-sm">Отменить</button>
-          <button onclick="saveProduct()" class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm">Отправить</button>
+    <!-- Модальное окно Входа (Admin Auth) -->
+    <div
+      id="auth-modal"
+      class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm"
+      >
+        <h2 class="text-lg font-bold mb-4">Вход администратора</h2>
+        <input
+          type="email"
+          id="auth-email"
+          placeholder="Email"
+          class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-blue-500"
+        />
+        <input
+          type="password"
+          id="auth-password"
+          placeholder="Пароль"
+          class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-blue-500"
+        />
+        <div class="flex space-x-2">
+          <button
+            onclick="closeAuthModal()"
+            class="w-1/2 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-medium text-sm"
+          >
+            Отмена
+          </button>
+          <button
+            onclick="loginAdmin()"
+            class="w-1/2 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm"
+          >
+            Войти
+          </button>
         </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQX3FCLXxm3pagakyTHqMXQR-HRLEud9E",
-      authDomain: "shoesstore-e057c.firebaseapp.com",
-      projectId: "shoesstore-e057c",
-      storageBucket: "shoesstore-e057c.firebasestorage.app",
-      messagingSenderId: "223432210569",
-      appId: "1:223432210569:web:8ffc67cc1b152ad5a2ee58",
-      measurementId: "G-RER47GLJFX",
-    };
+    <!-- Фильтр (Bottom Sheet) -->
+    <div
+      id="filter-modal"
+      class="fixed inset-0 bg-black/60 z-50 hidden flex flex-col justify-end"
+    >
+      <div
+        class="bg-zinc-900 border-t border-zinc-800 rounded-t-3xl p-5 max-h-[85vh] flex flex-col"
+      >
+        <div
+          class="flex justify-between items-center pb-4 border-b border-zinc-800"
+        >
+          <h3 class="text-lg font-bold">Фильтр</h3>
+          <button
+            onclick="closeFilter()"
+            class="p-1 text-zinc-400 hover:text-white"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
 
-    let isFirebaseReady = false;
-    try {
-      if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-        firebase.initializeApp(firebaseConfig);
-        isFirebaseReady = true;
-      }
-    } catch (e) {}
+        <div class="overflow-y-auto py-4 space-y-5 custom-scrollbar flex-1">
+          <div>
+            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+              >Тип</label
+            >
+            <div id="filter-type-group" class="flex flex-wrap gap-2"></div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+              >Пол</label
+            >
+            <div id="filter-gender-group" class="flex flex-wrap gap-2"></div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+              >Цвет</label
+            >
+            <div id="filter-color-group" class="flex flex-wrap gap-2"></div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+              >Параметры</label
+            >
+            <div id="filter-params-group" class="flex flex-wrap gap-2"></div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+              >Размеры</label
+            >
+            <div id="filter-sizes-group" class="grid grid-cols-6 gap-2"></div>
+          </div>
+        </div>
 
-    const db = isFirebaseReady ? firebase.firestore() : null;
-    const auth = isFirebaseReady ? firebase.auth() : null;
+        <div class="pt-4 border-t border-zinc-800 grid grid-cols-2 gap-3">
+          <button
+            onclick="resetFilters()"
+            class="py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl text-sm"
+          >
+            Очистить все
+          </button>
+          <button
+            onclick="applyFilters()"
+            class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm"
+          >
+            Готово
+          </button>
+        </div>
+      </div>
+    </div>
 
-    const TYPES = ["Кроссовки", "Ботинки", "Туфли", "Балетки"];
-    const GENDERS = ["М", "Д"];
-    const COLORS = [
-      "Чёрный",
-      "Белый",
-      "Розовый",
-      "Красный",
-      "Зелёный",
-      "Серый",
-      "Синий",
-      "Бежевый",
-      "Жёлтый",
-      "Оранжевый",
-      "Коричневый",
-      "Фиолетовый"
-    ];
-    const PARAMS = ["Тёплый", "Кеды", "Сетка", "Камни"];
-    const ALL_SIZES = Array.from({ length: 26 }, (_, i) => i + 16);
+    <!-- Окно Просмотра Товара -->
+    <div
+      id="product-detail-modal"
+      class="fixed inset-0 bg-black/90 z-50 hidden overflow-y-auto"
+    >
+      <div
+        class="min-h-screen p-4 flex flex-col justify-between max-w-lg mx-auto"
+      >
+        <div>
+          <button
+            onclick="closeProductDetail()"
+            class="p-2 bg-zinc-800/80 rounded-full text-white mb-4"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </button>
+          <div id="detail-content"></div>
+        </div>
 
-    let products = [];
-    let currentAdmin = false;
-    let selectedProductId = null;
+        <div
+          id="admin-detail-actions"
+          class="hidden space-y-3 pt-6 border-t border-zinc-800"
+        >
+          <button
+            onclick="openEditModalCurrent()"
+            class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl text-sm"
+          >
+            Изменить
+          </button>
+          <button
+            onclick="deleteCurrentProduct()"
+            class="w-full py-3 bg-zinc-800 text-red-500 hover:bg-zinc-700 font-semibold rounded-xl text-sm"
+          >
+            Удалить
+          </button>
+        </div>
+      </div>
+    </div>
 
-    let filters = { types: [], genders: [], colors: [], params: [], sizes: [] };
-    let formData = { types: [], genders: [], colors: [], params: [], sizes: [], extraSizes: [], photo: '', locationPhoto: '' };
-    let statsFilters = { types: [], genders: [], colors: [], params: [] };
+    <!-- Модалка Добавления / Изменения Товара -->
+    <div
+      id="form-modal"
+      class="fixed inset-0 bg-black/90 z-50 hidden overflow-y-auto"
+    >
+      <div class="min-h-screen p-4 max-w-lg mx-auto">
+        <div class="flex justify-between items-center mb-6">
+          <h2 id="form-title" class="text-xl font-bold">Добавить позицию</h2>
+          <button
+            onclick="closeFormModal()"
+            class="p-1 text-zinc-400 hover:text-white"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
 
-    window.addEventListener("DOMContentLoaded", () => {
-      initFilterOptions();
-      initFormOptions();
-      listenAuthChanges();
-      loadProducts();
-    });
+        <div class="space-y-5">
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-1"
+              >Цена (в тысячах, например 200 = 200 000)</label
+            >
+            <input
+              type="number"
+              id="form-price"
+              placeholder="например 200"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+            />
+          </div>
 
-    function listenAuthChanges() {
-      if (isFirebaseReady) {
-        auth.onAuthStateChanged((user) => {
-          currentAdmin = !!user;
-          updateAdminUI();
-        });
-      }
-    }
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-1"
+              >Фото товара</label
+            >
+            <input
+              type="file"
+              accept="image/*"
+              onchange="handleImageUpload(event, 'photo')"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-300"
+            />
+            <div
+              id="preview-photo"
+              class="mt-2 hidden h-24 w-24 rounded-xl overflow-hidden border border-zinc-700"
+            >
+              <img src="" class="w-full h-full object-cover" />
+            </div>
+          </div>
 
-    function updateAdminUI() {
-      const addBtn = document.getElementById("add-product-btn");
-      const csvBtn = document.getElementById("import-csv-btn");
-      const authBtn = document.getElementById("auth-action-btn");
-      const adminDetailActions = document.getElementById("admin-detail-actions");
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-1"
+              >Расположение на складе (фото)</label
+            >
+            <input
+              type="file"
+              accept="image/*"
+              onchange="handleImageUpload(event, 'locationPhoto')"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-300"
+            />
+            <div
+              id="preview-locationPhoto"
+              class="mt-2 hidden h-24 w-24 rounded-xl overflow-hidden border border-zinc-700"
+            >
+              <img src="" class="w-full h-full object-cover" />
+            </div>
+          </div>
 
-      if (currentAdmin) {
-        addBtn.classList.remove("hidden");
-        addBtn.classList.add("flex");
-        csvBtn.classList.remove("hidden");
-        csvBtn.classList.add("inline-flex");
-        authBtn.innerText = "Выйти";
-        adminDetailActions.classList.remove("hidden");
-      } else {
-        addBtn.classList.add("hidden");
-        addBtn.classList.remove("flex");
-        csvBtn.classList.add("hidden");
-        csvBtn.classList.remove("inline-flex");
-        authBtn.innerText = "Войти как админ";
-        adminDetailActions.classList.add("hidden");
-      }
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-2"
+              >Тип (выберите один или несколько)</label
+            >
+            <div id="form-type-group" class="flex flex-wrap gap-2"></div>
+          </div>
 
-      renderProducts();
-      if (!document.getElementById("stats-modal").classList.contains("hidden")) {
-        updateStats();
-      }
-      if (!document.getElementById("product-detail-modal").classList.contains("hidden") && selectedProductId) {
-        openProductDetail(selectedProductId);
-      }
-    }
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-2"
+              >Пол</label
+            >
+            <div id="form-gender-group" class="flex flex-wrap gap-2"></div>
+          </div>
 
-    function handleAuthClick() {
-      if (currentAdmin) {
-        if (isFirebaseReady) auth.signOut();
-        else {
-          currentAdmin = false;
-          updateAdminUI();
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-2"
+              >Цвет</label
+            >
+            <div id="form-color-group" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-2"
+              >Параметры</label
+            >
+            <div id="form-params-group" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-2"
+              >Размеры</label
+            >
+            <div id="form-sizes-group" class="grid grid-cols-6 gap-2"></div>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-zinc-300 block mb-2"
+              >Доп. размеры</label
+            >
+            <div
+              id="form-extra-sizes-group"
+              class="grid grid-cols-6 gap-2"
+            ></div>
+          </div>
+
+          <div class="pt-4 grid grid-cols-2 gap-3">
+            <button
+              onclick="closeFormModal()"
+              class="py-3 bg-zinc-800 text-zinc-300 font-semibold rounded-xl text-sm"
+            >
+              Отменить
+            </button>
+            <button
+              onclick="saveProduct()"
+              class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm"
+            >
+              Отправить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyAQX3FCLXxm3pagakyTHqMXQR-HRLEud9E",
+        authDomain: "shoesstore-e057c.firebaseapp.com",
+        projectId: "shoesstore-e057c",
+        storageBucket: "shoesstore-e057c.firebasestorage.app",
+        messagingSenderId: "223432210569",
+        appId: "1:223432210569:web:8ffc67cc1b152ad5a2ee58",
+        measurementId: "G-RER47GLJFX",
+      };
+
+      let isFirebaseReady = false;
+      try {
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+          firebase.initializeApp(firebaseConfig);
+          isFirebaseReady = true;
         }
-      } else {
-        document.getElementById("auth-modal").classList.remove("hidden");
-      }
-    }
+      } catch (e) {}
 
-    function closeAuthModal() {
-      document.getElementById("auth-modal").classList.add("hidden");
-    }
+      const db = isFirebaseReady ? firebase.firestore() : null;
+      const auth = isFirebaseReady ? firebase.auth() : null;
 
-    async function loginAdmin() {
-      const email = document.getElementById("auth-email").value;
-      const pass = document.getElementById("auth-password").value;
-      if (isFirebaseReady) {
-        try {
-          await auth.signInWithEmailAndPassword(email, pass);
-          closeAuthModal();
-        } catch (e) {
-          alert("Ошибка входа: " + e.message);
-        }
-      } else {
-        if (pass === "admin") {
-          currentAdmin = true;
-          updateAdminUI();
-          closeAuthModal();
-        } else {
-          alert("Пароль: admin");
-        }
-      }
-    }
+      const TYPES = ["Кроссовки", "Ботинки", "Туфли", "Балетки"];
+      const GENDERS = ["М", "Д"];
+      const COLORS = [
+        "Чёрный",
+        "Белый",
+        "Розовый",
+        "Красный",
+        "Зелёный",
+        "Серый",
+        "Синий",
+        "Бежевый",
+        "Жёлтый",
+        "Оранжевый",
+        "Коричневый",
+        "Фиолетовый",
+      ];
+      const PARAMS = ["Тёплый", "Кеды", "Сетка", "Камни"];
+      const ALL_SIZES = Array.from({ length: 26 }, (_, i) => i + 16);
 
-    function loadProducts() {
-      if (isFirebaseReady) {
-        db.collection("products").onSnapshot((snapshot) => {
-          products = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          renderProducts();
-          if (!document.getElementById("stats-modal").classList.contains("hidden")) {
-            updateStats();
-          }
-        }, (err) => {
-          console.error("Ошибка загрузки из Firestore:", err);
-        });
-      } else {
-        const local = localStorage.getItem("my_shoes_catalog");
-        products = local ? JSON.parse(local) : getDemoProducts();
-        renderProducts();
-      }
-    }
+      let products = [];
+      let currentAdmin = false;
+      let selectedProductId = null;
 
-    function matchArray(itemValues, filterValues) {
-      if (!filterValues || filterValues.length === 0) return true;
-      const arr = Array.isArray(itemValues) ? itemValues : (itemValues ? [itemValues] : []);
-      return filterValues.some(val => arr.includes(val));
-    }
+      let filters = {
+        types: [],
+        genders: [],
+        colors: [],
+        params: [],
+        sizes: [],
+      };
+      let formData = {
+        types: [],
+        genders: [],
+        colors: [],
+        params: [],
+        sizes: [],
+        extraSizes: [],
+        photo: "",
+        locationPhoto: "",
+      };
+      let statsFilters = { types: [], genders: [], colors: [], params: [] };
 
-    function renderProducts() {
-      const grid = document.getElementById("product-grid");
-      grid.innerHTML = "";
-
-      const filtered = products.filter((p) => {
-        if (!matchArray(p.types || p.type, filters.types)) return false;
-        if (!matchArray(p.genders || p.gender, filters.genders)) return false;
-        if (!matchArray(p.colors || p.color, filters.colors)) return false;
-        if (!matchArray(p.params || p.param, filters.params)) return false;
-        if (filters.sizes.length > 0) {
-          const pSizes = [...(p.sizes || []), ...(p.extraSizes || [])];
-          if (!filters.sizes.some((s) => pSizes.includes(s))) return false;
-        }
-        return true;
+      window.addEventListener("DOMContentLoaded", () => {
+        initFilterOptions();
+        initFormOptions();
+        listenAuthChanges();
+        loadProducts();
       });
 
-      filtered.forEach((item) => {
-        const card = document.createElement("div");
-        card.className = "bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800/80 cursor-pointer active:scale-95 transition";
-        card.onclick = () => openProductDetail(item.id);
-        card.innerHTML = `
+      function listenAuthChanges() {
+        if (isFirebaseReady) {
+          auth.onAuthStateChanged((user) => {
+            currentAdmin = !!user;
+            updateAdminUI();
+          });
+        }
+      }
+
+      function updateAdminUI() {
+        const addBtn = document.getElementById("add-product-btn");
+        const csvBtn = document.getElementById("import-csv-btn");
+        const authBtn = document.getElementById("auth-action-btn");
+        const adminDetailActions = document.getElementById(
+          "admin-detail-actions",
+        );
+
+        if (currentAdmin) {
+          addBtn.classList.remove("hidden");
+          addBtn.classList.add("flex");
+          csvBtn.classList.remove("hidden");
+          csvBtn.classList.add("inline-flex");
+          authBtn.innerText = "Выйти";
+          adminDetailActions.classList.remove("hidden");
+        } else {
+          addBtn.classList.add("hidden");
+          addBtn.classList.remove("flex");
+          csvBtn.classList.add("hidden");
+          csvBtn.classList.remove("inline-flex");
+          authBtn.innerText = "Войти как админ";
+          adminDetailActions.classList.add("hidden");
+        }
+
+        renderProducts();
+        if (
+          !document.getElementById("stats-modal").classList.contains("hidden")
+        ) {
+          updateStats();
+        }
+        if (
+          !document
+            .getElementById("product-detail-modal")
+            .classList.contains("hidden") &&
+          selectedProductId
+        ) {
+          openProductDetail(selectedProductId);
+        }
+      }
+
+      function handleAuthClick() {
+        if (currentAdmin) {
+          if (isFirebaseReady) auth.signOut();
+          else {
+            currentAdmin = false;
+            updateAdminUI();
+          }
+        } else {
+          document.getElementById("auth-modal").classList.remove("hidden");
+        }
+      }
+
+      function closeAuthModal() {
+        document.getElementById("auth-modal").classList.add("hidden");
+      }
+
+      async function loginAdmin() {
+        const email = document.getElementById("auth-email").value;
+        const pass = document.getElementById("auth-password").value;
+        if (isFirebaseReady) {
+          try {
+            await auth.signInWithEmailAndPassword(email, pass);
+            closeAuthModal();
+          } catch (e) {
+            alert("Ошибка входа: " + e.message);
+          }
+        } else {
+          if (pass === "admin") {
+            currentAdmin = true;
+            updateAdminUI();
+            closeAuthModal();
+          } else {
+            alert("Пароль: admin");
+          }
+        }
+      }
+
+      function loadProducts() {
+        if (isFirebaseReady) {
+          db.collection("products").onSnapshot(
+            (snapshot) => {
+              products = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              }));
+              renderProducts();
+              if (
+                !document
+                  .getElementById("stats-modal")
+                  .classList.contains("hidden")
+              ) {
+                updateStats();
+              }
+            },
+            (err) => {
+              console.error("Ошибка загрузки из Firestore:", err);
+            },
+          );
+        } else {
+          const local = localStorage.getItem("my_shoes_catalog");
+          products = local ? JSON.parse(local) : getDemoProducts();
+          renderProducts();
+        }
+      }
+
+      function matchArray(itemValues, filterValues) {
+        if (!filterValues || filterValues.length === 0) return true;
+        const arr = Array.isArray(itemValues)
+          ? itemValues
+          : itemValues
+            ? [itemValues]
+            : [];
+        return filterValues.some((val) => arr.includes(val));
+      }
+
+      function renderProducts() {
+        const grid = document.getElementById("product-grid");
+        grid.innerHTML = "";
+
+        const filtered = products.filter((p) => {
+          if (!matchArray(p.types || p.type, filters.types)) return false;
+          if (!matchArray(p.genders || p.gender, filters.genders)) return false;
+          if (!matchArray(p.colors || p.color, filters.colors)) return false;
+          if (!matchArray(p.params || p.param, filters.params)) return false;
+          if (filters.sizes.length > 0) {
+            const pSizes = [...(p.sizes || []), ...(p.extraSizes || [])];
+            if (!filters.sizes.some((s) => pSizes.includes(s))) return false;
+          }
+          return true;
+        });
+
+        filtered.forEach((item) => {
+          const card = document.createElement("div");
+          card.className =
+            "bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800/80 cursor-pointer active:scale-95 transition";
+          card.onclick = () => openProductDetail(item.id);
+          card.innerHTML = `
           <div class="aspect-square bg-zinc-800 relative">
             <img src="${item.photo}" class="w-full h-full object-cover">
           </div>
           ${currentAdmin ? `<div class="p-3"><span class="text-xl font-bold text-white">${(Number(item.price || 0) * 1000).toLocaleString("ru-RU")}</span></div>` : ""}
         `;
-        grid.appendChild(card);
-      });
-    }
+          grid.appendChild(card);
+        });
+      }
 
-    function initFilterOptions() {
-      renderMultiChips("filter-type-group", TYPES, filters.types, () => renderProducts());
-      renderMultiChips("filter-gender-group", GENDERS, filters.genders, () => renderProducts());
-      renderMultiChips("filter-color-group", COLORS, filters.colors, () => renderProducts());
-      renderMultiChips("filter-params-group", PARAMS, filters.params, () => renderProducts());
-      renderSizeGrid("filter-sizes-group", ALL_SIZES, (s) => {
-        const idx = filters.sizes.indexOf(s);
-        if (idx > -1) filters.sizes.splice(idx, 1);
-        else filters.sizes.push(s);
-      }, (s) => filters.sizes.includes(s));
-    }
+      function initFilterOptions() {
+        renderMultiChips("filter-type-group", TYPES, filters.types, () =>
+          renderProducts(),
+        );
+        renderMultiChips("filter-gender-group", GENDERS, filters.genders, () =>
+          renderProducts(),
+        );
+        renderMultiChips("filter-color-group", COLORS, filters.colors, () =>
+          renderProducts(),
+        );
+        renderMultiChips("filter-params-group", PARAMS, filters.params, () =>
+          renderProducts(),
+        );
+        renderSizeGrid(
+          "filter-sizes-group",
+          ALL_SIZES,
+          (s) => {
+            const idx = filters.sizes.indexOf(s);
+            if (idx > -1) filters.sizes.splice(idx, 1);
+            else filters.sizes.push(s);
+          },
+          (s) => filters.sizes.includes(s),
+        );
+      }
 
-    function renderMultiChips(containerId, options, targetArray, onChangeCallback) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
-      options.forEach((opt) => {
-        const btn = document.createElement("button");
-        const selected = targetArray.includes(opt);
-        btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-medium border transition ${
-          selected ? "bg-blue-600 border-blue-500 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-300"
-        }`;
-        btn.innerText = opt;
-        btn.onclick = (e) => {
-          e.preventDefault();
-          const idx = targetArray.indexOf(opt);
-          if (idx > -1) targetArray.splice(idx, 1);
-          else targetArray.push(opt);
-          renderMultiChips(containerId, options, targetArray, onChangeCallback);
-          if (onChangeCallback) onChangeCallback();
-        };
-        container.appendChild(btn);
-      });
-    }
+      function renderMultiChips(
+        containerId,
+        options,
+        targetArray,
+        onChangeCallback,
+      ) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        options.forEach((opt) => {
+          const btn = document.createElement("button");
+          const selected = targetArray.includes(opt);
+          btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-medium border transition ${
+            selected
+              ? "bg-blue-600 border-blue-500 text-white"
+              : "bg-zinc-800 border-zinc-700 text-zinc-300"
+          }`;
+          btn.innerText = opt;
+          btn.onclick = (e) => {
+            e.preventDefault();
+            const idx = targetArray.indexOf(opt);
+            if (idx > -1) targetArray.splice(idx, 1);
+            else targetArray.push(opt);
+            renderMultiChips(
+              containerId,
+              options,
+              targetArray,
+              onChangeCallback,
+            );
+            if (onChangeCallback) onChangeCallback();
+          };
+          container.appendChild(btn);
+        });
+      }
 
-    function renderSizeGrid(containerId, sizes, onClick, isSelected) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
-      sizes.forEach((s) => {
-        const btn = document.createElement("button");
-        const active = isSelected(s);
-        btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border transition ${
-          active ? "border-blue-500 text-blue-400 bg-blue-500/10" : "border-zinc-800 text-zinc-400 bg-zinc-900"
-        }`;
-        btn.innerText = s;
-        btn.onclick = (e) => {
-          e.preventDefault();
-          onClick(s);
-          renderSizeGrid(containerId, sizes, onClick, isSelected);
-        };
-        container.appendChild(btn);
-      });
-    }
+      function renderSizeGrid(containerId, sizes, onClick, isSelected) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        sizes.forEach((s) => {
+          const btn = document.createElement("button");
+          const active = isSelected(s);
+          btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border transition ${
+            active
+              ? "border-blue-500 text-blue-400 bg-blue-500/10"
+              : "border-zinc-800 text-zinc-400 bg-zinc-900"
+          }`;
+          btn.innerText = s;
+          btn.onclick = (e) => {
+            e.preventDefault();
+            onClick(s);
+            renderSizeGrid(containerId, sizes, onClick, isSelected);
+          };
+          container.appendChild(btn);
+        });
+      }
 
-    function openFilter() { document.getElementById("filter-modal").classList.remove("hidden"); }
-    function closeFilter() { document.getElementById("filter-modal").classList.add("hidden"); }
-    function resetFilters() {
-      filters = { types: [], genders: [], colors: [], params: [], sizes: [] };
-      initFilterOptions();
-      renderProducts();
-      document.getElementById("filter-indicator").classList.add("hidden");
-      closeFilter();
-    }
-    function applyFilters() {
-      const active = filters.types.length > 0 || filters.genders.length > 0 || filters.colors.length > 0 || filters.params.length > 0 || filters.sizes.length > 0;
-      document.getElementById("filter-indicator").classList.toggle("hidden", !active);
-      renderProducts();
-      closeFilter();
-    }
+      function openFilter() {
+        document.getElementById("filter-modal").classList.remove("hidden");
+      }
+      function closeFilter() {
+        document.getElementById("filter-modal").classList.add("hidden");
+      }
+      function resetFilters() {
+        filters = { types: [], genders: [], colors: [], params: [], sizes: [] };
+        initFilterOptions();
+        renderProducts();
+        document.getElementById("filter-indicator").classList.add("hidden");
+        closeFilter();
+      }
+      function applyFilters() {
+        const active =
+          filters.types.length > 0 ||
+          filters.genders.length > 0 ||
+          filters.colors.length > 0 ||
+          filters.params.length > 0 ||
+          filters.sizes.length > 0;
+        document
+          .getElementById("filter-indicator")
+          .classList.toggle("hidden", !active);
+        renderProducts();
+        closeFilter();
+      }
 
-    function openProductDetail(id) {
-      selectedProductId = id;
-      const p = products.find((x) => x.id === id);
-      if (!p) return;
+      function openProductDetail(id) {
+        selectedProductId = id;
+        const p = products.find((x) => x.id === id);
+        if (!p) return;
 
-      const typesStr = Array.isArray(p.types) ? p.types.join(", ") : (p.type || '');
-      const gendersStr = Array.isArray(p.genders) ? p.genders.join(", ") : (p.gender || '');
-      const colorsStr = Array.isArray(p.colors) ? p.colors.join(", ") : (p.color || '');
-      const paramsStr = Array.isArray(p.params) ? p.params.join(", ") : (p.param || '');
-      const fullPrice = (Number(p.price || 0) * 1000).toLocaleString("ru-RU");
+        const typesStr = Array.isArray(p.types)
+          ? p.types.join(", ")
+          : p.type || "";
+        const gendersStr = Array.isArray(p.genders)
+          ? p.genders.join(", ")
+          : p.gender || "";
+        const colorsStr = Array.isArray(p.colors)
+          ? p.colors.join(", ")
+          : p.color || "";
+        const paramsStr = Array.isArray(p.params)
+          ? p.params.join(", ")
+          : p.param || "";
+        const fullPrice = (Number(p.price || 0) * 1000).toLocaleString("ru-RU");
 
-      const content = document.getElementById("detail-content");
-      content.innerHTML = `
+        const content = document.getElementById("detail-content");
+        content.innerHTML = `
         ${currentAdmin ? `<div class="text-3xl font-bold text-center mb-4">${fullPrice}</div>` : ""}
         <div class="rounded-2xl overflow-hidden mb-4 bg-zinc-800 aspect-square">
           <img src="${p.photo}" class="w-full h-full object-cover">
@@ -564,507 +907,600 @@
         <div class="mb-6">
           <div class="text-xs font-semibold text-zinc-400 uppercase mb-1">Размеры</div>
           <div class="text-xl font-medium mb-1">${(p.sizes || []).join(", ") || "—"}</div>
-          ${(p.extraSizes && p.extraSizes.length > 0) ? `<div class="text-2xl font-bold text-blue-400">${p.extraSizes.join(", ")}</div>` : ""}
+          ${p.extraSizes && p.extraSizes.length > 0 ? `<div class="text-2xl font-bold text-blue-400">${p.extraSizes.join(", ")}</div>` : ""}
         </div>
-        ${currentAdmin ? `
-          ${p.locationPhoto ? `
+        ${
+          currentAdmin
+            ? `
+          ${
+            p.locationPhoto
+              ? `
             <div class="rounded-2xl overflow-hidden mb-6 bg-zinc-800 aspect-square">
               <img src="${p.locationPhoto}" class="w-full h-full object-cover">
             </div>
-          ` : ""}
+          `
+              : ""
+          }
           <div class="space-y-1 text-xl font-semibold mb-6">
             <div>Цвет: ${colorsStr || "—"}</div>
             <div>Тип: ${typesStr || "—"}</div>
             <div>Пол: ${gendersStr || "—"}</div>
             <div class="text-zinc-400 text-base">Параметры: ${paramsStr || "—"}</div>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       `;
-      document.getElementById("product-detail-modal").classList.remove("hidden");
-    }
+        document
+          .getElementById("product-detail-modal")
+          .classList.remove("hidden");
+      }
 
-    function closeProductDetail() { document.getElementById("product-detail-modal").classList.add("hidden"); }
+      function closeProductDetail() {
+        document.getElementById("product-detail-modal").classList.add("hidden");
+      }
 
-    function initFormOptions() {
-      renderMultiChips("form-type-group", TYPES, formData.types);
-      renderMultiChips("form-gender-group", GENDERS, formData.genders);
-      renderMultiChips("form-color-group", COLORS, formData.colors);
-      renderMultiChips("form-params-group", PARAMS, formData.params);
+      function initFormOptions() {
+        renderMultiChips("form-type-group", TYPES, formData.types);
+        renderMultiChips("form-gender-group", GENDERS, formData.genders);
+        renderMultiChips("form-color-group", COLORS, formData.colors);
+        renderMultiChips("form-params-group", PARAMS, formData.params);
 
-      renderSizeGrid("form-sizes-group", ALL_SIZES, (s) => {
-        const idx = formData.sizes.indexOf(s);
-        if (idx > -1) formData.sizes.splice(idx, 1);
-        else formData.sizes.push(s);
-      }, (s) => formData.sizes.includes(s));
+        renderSizeGrid(
+          "form-sizes-group",
+          ALL_SIZES,
+          (s) => {
+            const idx = formData.sizes.indexOf(s);
+            if (idx > -1) formData.sizes.splice(idx, 1);
+            else formData.sizes.push(s);
+          },
+          (s) => formData.sizes.includes(s),
+        );
 
-      renderSizeGrid("form-extra-sizes-group", ALL_SIZES, (s) => {
-        const idx = formData.extraSizes.indexOf(s);
-        if (idx > -1) formData.extraSizes.splice(idx, 1);
-        else formData.extraSizes.push(s);
-      }, (s) => formData.extraSizes.includes(s));
-    }
+        renderSizeGrid(
+          "form-extra-sizes-group",
+          ALL_SIZES,
+          (s) => {
+            const idx = formData.extraSizes.indexOf(s);
+            if (idx > -1) formData.extraSizes.splice(idx, 1);
+            else formData.extraSizes.push(s);
+          },
+          (s) => formData.extraSizes.includes(s),
+        );
+      }
 
-    function compressImageFile(file, maxDimension = 1000) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            let width = img.width;
-            let height = img.height;
+      function compressImageFile(file, maxDimension = 1000) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              let width = img.width;
+              let height = img.height;
 
-            if (width > height) {
-              if (width > maxDimension) {
-                height = Math.round((height * maxDimension) / width);
-                width = maxDimension;
+              if (width > height) {
+                if (width > maxDimension) {
+                  height = Math.round((height * maxDimension) / width);
+                  width = maxDimension;
+                }
+              } else {
+                if (height > maxDimension) {
+                  width = Math.round((width * maxDimension) / height);
+                  height = maxDimension;
+                }
               }
-            } else {
-              if (height > maxDimension) {
-                width = Math.round((width * maxDimension) / height);
-                height = maxDimension;
+
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+
+              let quality = 0.8;
+              let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+              const getKbSize = (str) =>
+                Math.round((str.length * (3 / 4)) / 1024);
+
+              while (getKbSize(dataUrl) > 200 && quality > 0.25) {
+                quality -= 0.05;
+                dataUrl = canvas.toDataURL("image/jpeg", quality);
               }
-            }
 
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
+              if (getKbSize(dataUrl) > 200 && maxDimension > 500) {
+                resolve(compressImageFile(file, maxDimension - 150));
+                return;
+              }
 
-            let quality = 0.80;
-            let dataUrl = canvas.toDataURL("image/jpeg", quality);
-
-            const getKbSize = (str) => Math.round((str.length * (3 / 4)) / 1024);
-
-            while (getKbSize(dataUrl) > 200 && quality > 0.25) {
-              quality -= 0.05;
-              dataUrl = canvas.toDataURL("image/jpeg", quality);
-            }
-
-            if (getKbSize(dataUrl) > 200 && maxDimension > 500) {
-              resolve(compressImageFile(file, maxDimension - 150));
-              return;
-            }
-
-            resolve(dataUrl);
+              resolve(dataUrl);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
           };
-          img.onerror = reject;
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function handleImageUpload(event, key) {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-        const compressedDataUrl = await compressImageFile(file);
-        formData[key] = compressedDataUrl;
-        const prev = document.getElementById("preview-" + key);
-        if (prev) {
-          prev.classList.remove("hidden");
-          prev.querySelector("img").src = compressedDataUrl;
-        }
-      } catch (err) {
-        alert("Не удалось обработать изображение");
-      }
-    }
-
-    function openAddModal() {
-      selectedProductId = null;
-      formData = { types: [], genders: [], colors: [], params: [], sizes: [], extraSizes: [], photo: '', locationPhoto: '' };
-      document.getElementById("form-title").innerText = "Добавить позицию";
-      document.getElementById("form-price").value = "";
-      document.getElementById("preview-photo").classList.add("hidden");
-      document.getElementById("preview-locationPhoto").classList.add("hidden");
-      initFormOptions();
-      document.getElementById("form-modal").classList.remove("hidden");
-    }
-
-    function openEditModalCurrent() {
-      const p = products.find((x) => x.id === selectedProductId);
-      if (!p) return;
-
-      formData = {
-        types: Array.isArray(p.types) ? [...p.types] : (p.type ? [p.type] : []),
-        genders: Array.isArray(p.genders) ? [...p.genders] : (p.gender ? [p.gender] : []),
-        colors: Array.isArray(p.colors) ? [...p.colors] : (p.color ? [p.color] : []),
-        params: Array.isArray(p.params) ? [...p.params] : (p.param ? [p.param] : []),
-        sizes: [...(p.sizes || [])],
-        extraSizes: [...(p.extraSizes || [])],
-        photo: p.photo || '',
-        locationPhoto: p.locationPhoto || ''
-      };
-
-      document.getElementById("form-title").innerText = "Изменить позицию";
-      document.getElementById("form-price").value = p.price;
-
-      const prevP = document.getElementById("preview-photo");
-      if (formData.photo) { prevP.classList.remove("hidden"); prevP.querySelector("img").src = formData.photo; }
-      else prevP.classList.add("hidden");
-
-      const prevL = document.getElementById("preview-locationPhoto");
-      if (formData.locationPhoto) { prevL.classList.remove("hidden"); prevL.querySelector("img").src = formData.locationPhoto; }
-      else prevL.classList.add("hidden");
-
-      initFormOptions();
-      closeProductDetail();
-      document.getElementById("form-modal").classList.remove("hidden");
-    }
-
-    function closeFormModal() { document.getElementById("form-modal").classList.add("hidden"); }
-
-    async function saveProduct() {
-      const price = document.getElementById("form-price").value;
-      if (!price) { alert("Укажите цену"); return; }
-      if (!formData.photo) { alert("Загрузите фото товара"); return; }
-
-      const payload = {
-        price: Number(price),
-        photo: formData.photo,
-        locationPhoto: formData.locationPhoto || "",
-        types: formData.types,
-        genders: formData.genders,
-        colors: formData.colors,
-        params: formData.params,
-        sizes: formData.sizes,
-        extraSizes: formData.extraSizes,
-      };
-
-      try {
-        if (isFirebaseReady) {
-          if (selectedProductId) await db.collection("products").doc(selectedProductId).update(payload);
-          else await db.collection("products").add(payload);
-        } else {
-          if (selectedProductId) {
-            const idx = products.findIndex((x) => x.id === selectedProductId);
-            products[idx] = { id: selectedProductId, ...payload };
-          } else {
-            products.push({ id: Date.now().toString(), ...payload });
-          }
-          localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
-          renderProducts();
-        }
-        closeFormModal();
-      } catch (err) {
-        alert("Ошибка сохранения: " + err.message);
-      }
-    }
-
-    async function deleteCurrentProduct() {
-      if (!confirm("Удалить этот товар?")) return;
-      if (isFirebaseReady) {
-        await db.collection("products").doc(selectedProductId).delete();
-      } else {
-        products = products.filter((x) => x.id !== selectedProductId);
-        localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
-        renderProducts();
-      }
-      closeProductDetail();
-    }
-
-    // ==========================================
-    // ИМПОРТ ДАННЫХ ИЗ CSV (GLIDE) В FIREBASE
-    // ==========================================
-    function parseCsvRows(text) {
-      const rows = [];
-      let row = [];
-      let field = "";
-      let inQuotes = false;
-
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        const next = text[i + 1];
-        if (inQuotes) {
-          if (ch === '"' && next === '"') {
-            field += '"';
-            i++;
-          } else if (ch === '"') {
-            inQuotes = false;
-          } else {
-            field += ch;
-          }
-        } else {
-          if (ch === '"') {
-            inQuotes = true;
-          } else if (ch === ",") {
-            row.push(field);
-            field = "";
-          } else if (ch === "\n" || (ch === "\r" && next === "\n")) {
-            row.push(field);
-            rows.push(row);
-            row = [];
-            field = "";
-            if (ch === "\r") i++;
-          } else {
-            field += ch;
-          }
-        }
-      }
-      if (field.length > 0 || row.length > 0) {
-        row.push(field);
-        rows.push(row);
-      }
-      return rows;
-    }
-
-    function splitList(val) {
-      if (!val) return [];
-      return String(val)
-        .split(",")
-        .map(s => s.trim())
-        .filter(Boolean);
-    }
-
-    function splitNumbers(val) {
-      return splitList(val)
-        .map(n => Number(n))
-        .filter(n => !Number.isNaN(n));
-    }
-
-    async function handleCsvImport(event) {
-      const file = event.target.files[0];
-      event.target.value = "";
-      if (!file) return;
-      if (!currentAdmin) {
-        alert("Войдите как администратор для импорта");
-        return;
-      }
-
-      const text = await file.text();
-      const rows = parseCsvRows(text);
-      if (rows.length < 2) {
-        alert("CSV файл пуст или не содержит строк товаров");
-        return;
-      }
-
-      const headers = rows[0].map(h => h.replace(/^\uFEFF/, "").trim());
-      const colIdx = (name) => headers.indexOf(name);
-
-      const idxPhoto = colIdx("Фото");
-      const idxPrice = colIdx("Цена");
-      const idxType = colIdx("Тип");
-      const idxGender = colIdx("Пол");
-      const idxColor = colIdx("Цвет");
-      const idxLocation = colIdx("Расположение");
-      const idxSizes = colIdx("Размеры");
-      const idxExtra = colIdx("Доп размеры");
-      const idxParams = colIdx("Параметры");
-
-      const items = [];
-      for (let r = 1; r < rows.length; r++) {
-        const cols = rows[r];
-        if (!cols || cols.length === 0 || cols.every(c => !c.trim())) continue;
-
-        const photo = idxPhoto >= 0 ? (cols[idxPhoto] || "").trim() : "";
-        const locationPhoto = idxLocation >= 0 ? (cols[idxLocation] || "").trim() : "";
-        const price = idxPrice >= 0 ? Number(String(cols[idxPrice] || "0").replace(",", ".").trim()) || 0 : 0;
-
-        items.push({
-          price,
-          photo,
-          locationPhoto,
-          types: idxType >= 0 ? splitList(cols[idxType]) : [],
-          genders: idxGender >= 0 ? splitList(cols[idxGender]) : [],
-          colors: idxColor >= 0 ? splitList(cols[idxColor]) : [],
-          params: idxParams >= 0 ? splitList(cols[idxParams]) : [],
-          sizes: idxSizes >= 0 ? splitNumbers(cols[idxSizes]) : [],
-          extraSizes: idxExtra >= 0 ? splitNumbers(cols[idxExtra]) : [],
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
         });
       }
 
-      if (!confirm(`Найдено позиций: ${items.length}. Загрузить их в базу?`)) return;
-
-      try {
-        if (isFirebaseReady) {
-          for (let i = 0; i < items.length; i += 400) {
-            const batch = db.batch();
-            const chunk = items.slice(i, i + 400);
-            chunk.forEach(item => {
-              const ref = db.collection("products").doc();
-              batch.set(ref, item);
-            });
-            await batch.commit();
+      async function handleImageUpload(event, key) {
+        const file = event.target.files[0];
+        if (!file) return;
+        try {
+          const compressedDataUrl = await compressImageFile(file);
+          formData[key] = compressedDataUrl;
+          const prev = document.getElementById("preview-" + key);
+          if (prev) {
+            prev.classList.remove("hidden");
+            prev.querySelector("img").src = compressedDataUrl;
           }
-          alert(`Успешно загружено позиций: ${items.length}`);
-        } else {
-          products = [...products, ...items.map((it, idx) => ({ id: "csv_" + Date.now() + "_" + idx, ...it }))];
-          localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
-          renderProducts();
-          alert(`Добавлено локально: ${items.length}`);
+        } catch (err) {
+          alert("Не удалось обработать изображение");
         }
-      } catch (err) {
-        alert("Ошибка при импорте: " + err.message);
       }
-    }
 
-    // ==========================================
-    // ЛОГИКА СТАТИСТИКИ И ГРАФИКА
-    // ==========================================
-    function openStatsModal() {
-      initStatsOptions();
-      updateStats();
-      document.getElementById("stats-modal").classList.remove("hidden");
-    }
+      function openAddModal() {
+        selectedProductId = null;
+        formData = {
+          types: [],
+          genders: [],
+          colors: [],
+          params: [],
+          sizes: [],
+          extraSizes: [],
+          photo: "",
+          locationPhoto: "",
+        };
+        document.getElementById("form-title").innerText = "Добавить позицию";
+        document.getElementById("form-price").value = "";
+        document.getElementById("preview-photo").classList.add("hidden");
+        document
+          .getElementById("preview-locationPhoto")
+          .classList.add("hidden");
+        initFormOptions();
+        document.getElementById("form-modal").classList.remove("hidden");
+      }
 
-    function closeStatsModal() {
-      document.getElementById("stats-modal").classList.add("hidden");
-    }
+      function openEditModalCurrent() {
+        const p = products.find((x) => x.id === selectedProductId);
+        if (!p) return;
 
-    function initStatsOptions() {
-      renderMultiChips("stats-types", TYPES, statsFilters.types, () => updateStats());
-      renderMultiChips("stats-genders", GENDERS, statsFilters.genders, () => updateStats());
-      renderMultiChips("stats-colors", COLORS, statsFilters.colors, () => updateStats());
-      renderMultiChips("stats-params", PARAMS, statsFilters.params, () => updateStats());
-    }
-
-    function updateStats() {
-      const sizeCounts = {};
-      ALL_SIZES.forEach(s => sizeCounts[s] = 0);
-
-      let totalPairs = 0;
-      let totalPriceRaw = 0;
-
-      products.forEach(p => {
-        if (!matchArray(p.types || p.type, statsFilters.types)) return;
-        if (!matchArray(p.genders || p.gender, statsFilters.genders)) return;
-        if (!matchArray(p.colors || p.color, statsFilters.colors)) return;
-        if (!matchArray(p.params || p.param, statsFilters.params)) return;
-
-        const allProductSizes = [...(p.sizes || []), ...(p.extraSizes || [])];
-        let productPairsCount = 0;
-
-        allProductSizes.forEach(s => {
-          if (sizeCounts[s] !== undefined) {
-            sizeCounts[s]++;
-            productPairsCount++;
-            totalPairs++;
-          }
-        });
-
-        totalPriceRaw += productPairsCount * Number(p.price || 0);
-      });
-
-      const finalTotalPrice = totalPriceRaw * 1000;
-
-      renderChart(sizeCounts);
-      renderStatsList(sizeCounts);
-      renderStatsSummary(totalPairs, finalTotalPrice);
-    }
-
-    function renderChart(sizeCounts) {
-      const container = document.getElementById("chart-container");
-      container.innerHTML = "";
-
-      const infoSpan = document.getElementById("selected-chart-info");
-      infoSpan.innerText = "Нажмите на столбец";
-
-      const maxVal = Math.max(...Object.values(sizeCounts), 5);
-      const svgNS = "http://www.w3.org/2000/svg";
-      const svg = document.createElementNS(svgNS, "svg");
-      svg.setAttribute("width", "100%");
-      svg.setAttribute("height", "100%");
-      svg.setAttribute("viewBox", `0 0 650 180`);
-
-      const colWidth = 650 / ALL_SIZES.length;
-
-      ALL_SIZES.forEach((size, idx) => {
-        const count = sizeCounts[size];
-        const barHeight = (count / maxVal) * 120;
-        const x = idx * colWidth + 4;
-        const y = 140 - barHeight;
-
-        const g = document.createElementNS(svgNS, "g");
-        g.style.cursor = "pointer";
-        g.onclick = () => {
-          infoSpan.innerText = `Размер ${size}: ${count} шт.`;
+        formData = {
+          types: Array.isArray(p.types) ? [...p.types] : p.type ? [p.type] : [],
+          genders: Array.isArray(p.genders)
+            ? [...p.genders]
+            : p.gender
+              ? [p.gender]
+              : [],
+          colors: Array.isArray(p.colors)
+            ? [...p.colors]
+            : p.color
+              ? [p.color]
+              : [],
+          params: Array.isArray(p.params)
+            ? [...p.params]
+            : p.param
+              ? [p.param]
+              : [],
+          sizes: [...(p.sizes || [])],
+          extraSizes: [...(p.extraSizes || [])],
+          photo: p.photo || "",
+          locationPhoto: p.locationPhoto || "",
         };
 
-        const rect = document.createElementNS(svgNS, "rect");
-        rect.setAttribute("x", x);
-        rect.setAttribute("y", y);
-        rect.setAttribute("width", colWidth - 8);
-        rect.setAttribute("height", barHeight);
-        rect.setAttribute("rx", "4");
-        rect.setAttribute("fill", count > 0 ? "#3b82f6" : "#27272a");
+        document.getElementById("form-title").innerText = "Изменить позицию";
+        document.getElementById("form-price").value = p.price;
 
-        const textX = document.createElementNS(svgNS, "text");
-        textX.setAttribute("x", x + (colWidth - 8) / 2);
-        textX.setAttribute("y", 162);
-        textX.setAttribute("text-anchor", "middle");
-        textX.setAttribute("fill", "#a1a1aa");
-        textX.setAttribute("font-size", "10");
-        textX.textContent = size;
+        const prevP = document.getElementById("preview-photo");
+        if (formData.photo) {
+          prevP.classList.remove("hidden");
+          prevP.querySelector("img").src = formData.photo;
+        } else prevP.classList.add("hidden");
 
-        if (count > 0) {
-          const textY = document.createElementNS(svgNS, "text");
-          textY.setAttribute("x", x + (colWidth - 8) / 2);
-          textY.setAttribute("y", y - 4);
-          textY.setAttribute("text-anchor", "middle");
-          textY.setAttribute("fill", "#60a5fa");
-          textY.setAttribute("font-size", "10");
-          textY.setAttribute("font-weight", "bold");
-          textY.textContent = count;
-          g.appendChild(textY);
+        const prevL = document.getElementById("preview-locationPhoto");
+        if (formData.locationPhoto) {
+          prevL.classList.remove("hidden");
+          prevL.querySelector("img").src = formData.locationPhoto;
+        } else prevL.classList.add("hidden");
+
+        initFormOptions();
+        closeProductDetail();
+        document.getElementById("form-modal").classList.remove("hidden");
+      }
+
+      function closeFormModal() {
+        document.getElementById("form-modal").classList.add("hidden");
+      }
+
+      async function saveProduct() {
+        const price = document.getElementById("form-price").value;
+        if (!price) {
+          alert("Укажите цену");
+          return;
+        }
+        if (!formData.photo) {
+          alert("Загрузите фото товара");
+          return;
         }
 
-        g.appendChild(rect);
-        g.appendChild(textX);
-        svg.appendChild(g);
-      });
+        const payload = {
+          price: Number(price),
+          photo: formData.photo,
+          locationPhoto: formData.locationPhoto || "",
+          types: formData.types,
+          genders: formData.genders,
+          colors: formData.colors,
+          params: formData.params,
+          sizes: formData.sizes,
+          extraSizes: formData.extraSizes,
+        };
 
-      container.appendChild(svg);
-    }
+        try {
+          if (isFirebaseReady) {
+            if (selectedProductId)
+              await db
+                .collection("products")
+                .doc(selectedProductId)
+                .update(payload);
+            else await db.collection("products").add(payload);
+          } else {
+            if (selectedProductId) {
+              const idx = products.findIndex((x) => x.id === selectedProductId);
+              products[idx] = { id: selectedProductId, ...payload };
+            } else {
+              products.push({ id: Date.now().toString(), ...payload });
+            }
+            localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
+            renderProducts();
+          }
+          closeFormModal();
+        } catch (err) {
+          alert("Ошибка сохранения: " + err.message);
+        }
+      }
 
-    function renderStatsList(sizeCounts) {
-      const list = document.getElementById("stats-list");
-      list.innerHTML = "";
+      async function deleteCurrentProduct() {
+        if (!confirm("Удалить этот товар?")) return;
+        if (isFirebaseReady) {
+          await db.collection("products").doc(selectedProductId).delete();
+        } else {
+          products = products.filter((x) => x.id !== selectedProductId);
+          localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
+          renderProducts();
+        }
+        closeProductDetail();
+      }
 
-      ALL_SIZES.forEach(s => {
-        const count = sizeCounts[s];
-        const item = document.createElement("div");
-        item.className = `p-2 rounded-xl border text-xs flex justify-between items-center ${
-          count > 0 ? "bg-zinc-800 border-zinc-700 text-white font-medium" : "bg-zinc-900/50 border-zinc-800/50 text-zinc-500"
-        }`;
-        item.innerHTML = `<span>${s}</span> <span class="${count > 0 ? 'text-blue-400 font-bold' : ''}">${count} шт.</span>`;
-        list.appendChild(item);
-      });
-    }
+      // ==========================================
+      // ИМПОРТ ДАННЫХ ИЗ CSV (GLIDE) В FIREBASE
+      // ==========================================
+      function parseCsvRows(text) {
+        const rows = [];
+        let row = [];
+        let field = "";
+        let inQuotes = false;
 
-    function renderStatsSummary(totalPairs, totalPrice) {
-      const summary = document.getElementById("stats-summary");
-      summary.innerHTML = `
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          const next = text[i + 1];
+          if (inQuotes) {
+            if (ch === '"' && next === '"') {
+              field += '"';
+              i++;
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              field += ch;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+            } else if (ch === ",") {
+              row.push(field);
+              field = "";
+            } else if (ch === "\n" || (ch === "\r" && next === "\n")) {
+              row.push(field);
+              rows.push(row);
+              row = [];
+              field = "";
+              if (ch === "\r") i++;
+            } else {
+              field += ch;
+            }
+          }
+        }
+        if (field.length > 0 || row.length > 0) {
+          row.push(field);
+          rows.push(row);
+        }
+        return rows;
+      }
+
+      function splitList(val) {
+        if (!val) return [];
+        return String(val)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+
+      function splitNumbers(val) {
+        return splitList(val)
+          .map((n) => Number(n))
+          .filter((n) => !Number.isNaN(n));
+      }
+
+      async function handleCsvImport(event) {
+        const file = event.target.files[0];
+        event.target.value = "";
+        if (!file) return;
+        if (!currentAdmin) {
+          alert("Войдите как администратор для импорта");
+          return;
+        }
+
+        const text = await file.text();
+        const rows = parseCsvRows(text);
+        if (rows.length < 2) {
+          alert("CSV файл пуст или не содержит строк товаров");
+          return;
+        }
+
+        const headers = rows[0].map((h) => h.replace(/^\uFEFF/, "").trim());
+        const colIdx = (name) => headers.indexOf(name);
+
+        const idxPhoto = colIdx("Фото");
+        const idxPrice = colIdx("Цена");
+        const idxType = colIdx("Тип");
+        const idxGender = colIdx("Пол");
+        const idxColor = colIdx("Цвет");
+        const idxLocation = colIdx("Расположение");
+        const idxSizes = colIdx("Размеры");
+        const idxExtra = colIdx("Доп размеры");
+        const idxParams = colIdx("Параметры");
+
+        const items = [];
+        for (let r = 1; r < rows.length; r++) {
+          const cols = rows[r];
+          if (!cols || cols.length === 0 || cols.every((c) => !c.trim()))
+            continue;
+
+          const photo = idxPhoto >= 0 ? (cols[idxPhoto] || "").trim() : "";
+          const locationPhoto =
+            idxLocation >= 0 ? (cols[idxLocation] || "").trim() : "";
+          const price =
+            idxPrice >= 0
+              ? Number(
+                  String(cols[idxPrice] || "0")
+                    .replace(",", ".")
+                    .trim(),
+                ) || 0
+              : 0;
+
+          items.push({
+            price,
+            photo,
+            locationPhoto,
+            types: idxType >= 0 ? splitList(cols[idxType]) : [],
+            genders: idxGender >= 0 ? splitList(cols[idxGender]) : [],
+            colors: idxColor >= 0 ? splitList(cols[idxColor]) : [],
+            params: idxParams >= 0 ? splitList(cols[idxParams]) : [],
+            sizes: idxSizes >= 0 ? splitNumbers(cols[idxSizes]) : [],
+            extraSizes: idxExtra >= 0 ? splitNumbers(cols[idxExtra]) : [],
+          });
+        }
+
+        if (!confirm(`Найдено позиций: ${items.length}. Загрузить их в базу?`))
+          return;
+
+        try {
+          if (isFirebaseReady) {
+            for (let i = 0; i < items.length; i += 400) {
+              const batch = db.batch();
+              const chunk = items.slice(i, i + 400);
+              chunk.forEach((item) => {
+                const ref = db.collection("products").doc();
+                batch.set(ref, item);
+              });
+              await batch.commit();
+            }
+            alert(`Успешно загружено позиций: ${items.length}`);
+          } else {
+            products = [
+              ...products,
+              ...items.map((it, idx) => ({
+                id: "csv_" + Date.now() + "_" + idx,
+                ...it,
+              })),
+            ];
+            localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
+            renderProducts();
+            alert(`Добавлено локально: ${items.length}`);
+          }
+        } catch (err) {
+          alert("Ошибка при импорте: " + err.message);
+        }
+      }
+
+      // ==========================================
+      // ЛОГИКА СТАТИСТИКИ И ГРАФИКА
+      // ==========================================
+      function openStatsModal() {
+        initStatsOptions();
+        updateStats();
+        document.getElementById("stats-modal").classList.remove("hidden");
+      }
+
+      function closeStatsModal() {
+        document.getElementById("stats-modal").classList.add("hidden");
+      }
+
+      function initStatsOptions() {
+        renderMultiChips("stats-types", TYPES, statsFilters.types, () =>
+          updateStats(),
+        );
+        renderMultiChips("stats-genders", GENDERS, statsFilters.genders, () =>
+          updateStats(),
+        );
+        renderMultiChips("stats-colors", COLORS, statsFilters.colors, () =>
+          updateStats(),
+        );
+        renderMultiChips("stats-params", PARAMS, statsFilters.params, () =>
+          updateStats(),
+        );
+      }
+
+      function updateStats() {
+        const sizeCounts = {};
+        ALL_SIZES.forEach((s) => (sizeCounts[s] = 0));
+
+        let totalPairs = 0;
+        let totalPriceRaw = 0;
+
+        products.forEach((p) => {
+          if (!matchArray(p.types || p.type, statsFilters.types)) return;
+          if (!matchArray(p.genders || p.gender, statsFilters.genders)) return;
+          if (!matchArray(p.colors || p.color, statsFilters.colors)) return;
+          if (!matchArray(p.params || p.param, statsFilters.params)) return;
+
+          const allProductSizes = [...(p.sizes || []), ...(p.extraSizes || [])];
+          let productPairsCount = 0;
+
+          allProductSizes.forEach((s) => {
+            if (sizeCounts[s] !== undefined) {
+              sizeCounts[s]++;
+              productPairsCount++;
+              totalPairs++;
+            }
+          });
+
+          totalPriceRaw += productPairsCount * Number(p.price || 0);
+        });
+
+        const finalTotalPrice = totalPriceRaw * 1000;
+
+        renderChart(sizeCounts);
+        renderStatsList(sizeCounts);
+        renderStatsSummary(totalPairs, finalTotalPrice);
+      }
+
+      function renderChart(sizeCounts) {
+        const container = document.getElementById("chart-container");
+        container.innerHTML = "";
+
+        const infoSpan = document.getElementById("selected-chart-info");
+        infoSpan.innerText = "Нажмите на столбец";
+
+        const maxVal = Math.max(...Object.values(sizeCounts), 5);
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        svg.setAttribute("viewBox", `0 0 650 180`);
+
+        const colWidth = 650 / ALL_SIZES.length;
+
+        ALL_SIZES.forEach((size, idx) => {
+          const count = sizeCounts[size];
+          const barHeight = (count / maxVal) * 120;
+          const x = idx * colWidth + 4;
+          const y = 140 - barHeight;
+
+          const g = document.createElementNS(svgNS, "g");
+          g.style.cursor = "pointer";
+          g.onclick = () => {
+            infoSpan.innerText = `Размер ${size}: ${count} шт.`;
+          };
+
+          const rect = document.createElementNS(svgNS, "rect");
+          rect.setAttribute("x", x);
+          rect.setAttribute("y", y);
+          rect.setAttribute("width", colWidth - 8);
+          rect.setAttribute("height", barHeight);
+          rect.setAttribute("rx", "4");
+          rect.setAttribute("fill", count > 0 ? "#3b82f6" : "#27272a");
+
+          const textX = document.createElementNS(svgNS, "text");
+          textX.setAttribute("x", x + (colWidth - 8) / 2);
+          textX.setAttribute("y", 162);
+          textX.setAttribute("text-anchor", "middle");
+          textX.setAttribute("fill", "#a1a1aa");
+          textX.setAttribute("font-size", "10");
+          textX.textContent = size;
+
+          if (count > 0) {
+            const textY = document.createElementNS(svgNS, "text");
+            textY.setAttribute("x", x + (colWidth - 8) / 2);
+            textY.setAttribute("y", y - 4);
+            textY.setAttribute("text-anchor", "middle");
+            textY.setAttribute("fill", "#60a5fa");
+            textY.setAttribute("font-size", "10");
+            textY.setAttribute("font-weight", "bold");
+            textY.textContent = count;
+            g.appendChild(textY);
+          }
+
+          g.appendChild(rect);
+          g.appendChild(textX);
+          svg.appendChild(g);
+        });
+
+        container.appendChild(svg);
+      }
+
+      function renderStatsList(sizeCounts) {
+        const list = document.getElementById("stats-list");
+        list.innerHTML = "";
+
+        ALL_SIZES.forEach((s) => {
+          const count = sizeCounts[s];
+          const item = document.createElement("div");
+          item.className = `p-2 rounded-xl border text-xs flex justify-between items-center ${
+            count > 0
+              ? "bg-zinc-800 border-zinc-700 text-white font-medium"
+              : "bg-zinc-900/50 border-zinc-800/50 text-zinc-500"
+          }`;
+          item.innerHTML = `<span>${s}</span> <span class="${count > 0 ? "text-blue-400 font-bold" : ""}">${count} шт.</span>`;
+          list.appendChild(item);
+        });
+      }
+
+      function renderStatsSummary(totalPairs, totalPrice) {
+        const summary = document.getElementById("stats-summary");
+        summary.innerHTML = `
         <div class="flex justify-between items-center text-sm">
           <span class="text-zinc-400">Всего пар обуви:</span>
           <span class="text-white font-bold text-base">${totalPairs} шт.</span>
         </div>
-        ${currentAdmin ? `
+        ${
+          currentAdmin
+            ? `
           <div class="flex justify-between items-center text-sm pt-2 border-t border-zinc-800">
             <span class="text-zinc-400">Общая сумма:</span>
             <span class="text-blue-400 font-bold text-lg">${totalPrice.toLocaleString("ru-RU")}</span>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       `;
-    }
+      }
 
-    function getDemoProducts() {
-      return [
-        {
-          id: "1",
-          price: 200,
-          colors: ["Розовый"],
-          types: ["Кроссовки"],
-          genders: ["Д"],
-          params: ["Тёплый"],
-          sizes: [37, 38, 39, 40],
-          extraSizes: [38],
-          photo: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-          locationPhoto: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7",
-        },
-      ];
-    }
-  </script>
-</body>
+      function getDemoProducts() {
+        return [
+          {
+            id: "1",
+            price: 200,
+            colors: ["Розовый"],
+            types: ["Кроссовки"],
+            genders: ["Д"],
+            params: ["Тёплый"],
+            sizes: [37, 38, 39, 40],
+            extraSizes: [38],
+            photo: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+            locationPhoto:
+              "https://images.unsplash.com/photo-1586023492125-27b2c045efd7",
+          },
+        ];
+      }
+    </script>
+  </body>
 </html>
