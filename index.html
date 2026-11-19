@@ -19,14 +19,14 @@
       "short_name": "Обувь",
       "start_url": ".",
       "display": "standalone",
-      "background_color": "#121212",
-      "theme_color": "#121212"
+      "background_color": "#000000",
+      "theme_color": "#000000"
     }'
     />
 
     <style>
       body {
-        background-color: #121212;
+        background-color: #000000;
         color: #ffffff;
         font-family:
           -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -41,17 +41,18 @@
       }
     </style>
   </head>
-  <body class="pb-10">
+  <body class="bg-black text-white pb-10">
     <!-- Шапка -->
     <header
-      class="sticky top-0 z-20 bg-[#121212]/95 backdrop-blur border-b border-zinc-800 px-3 py-3 flex items-center justify-between"
+      class="sticky top-0 z-20 bg-black border-b border-zinc-800 px-3 py-3 flex items-center justify-between"
     >
-      <!-- Левая часть: Статистика, Вход/Выход Админа, Импорт CSV (только для админа) -->
+      <!-- Левая часть: Статистика (только админ) и Вход/Выход Админа -->
       <div class="flex items-center space-x-2">
         <button
+          id="stats-action-btn"
           onclick="openStatsModal()"
           title="Статистика"
-          class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-blue-400 flex items-center justify-center"
+          class="hidden p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-blue-400 items-center justify-center"
         >
           <svg
             class="w-5 h-5"
@@ -75,20 +76,6 @@
         >
           Войти как админ
         </button>
-
-        <!-- <label
-          id="import-csv-btn"
-          title="Импорт CSV из Glide"
-          class="hidden cursor-pointer text-xs font-semibold px-2.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400"
-        >
-          <span>CSV</span>
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            onchange="handleCsvImport(event)"
-            class="hidden"
-          />
-        </label> -->
       </div>
 
       <!-- Правая часть: Фильтр и Добавление товара -->
@@ -140,16 +127,16 @@
     </header>
 
     <!-- Сетка товаров -->
-    <main class="p-3">
+    <main class="p-3 bg-black min-h-screen">
       <div id="product-grid" class="grid grid-cols-2 gap-1"></div>
     </main>
 
     <!-- Модальное окно Статистики -->
     <div
       id="stats-modal"
-      class="fixed inset-0 bg-black/80 z-50 hidden overflow-y-auto"
+      class="fixed inset-0 bg-black z-50 hidden overflow-y-auto"
     >
-      <div class="min-h-screen p-4 max-w-lg mx-auto">
+      <div class="min-h-screen bg-black p-4 max-w-lg mx-auto">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold">Статистика остатков</h2>
           <button
@@ -239,7 +226,7 @@
     <!-- Модальное окно Входа (Admin Auth) -->
     <div
       id="auth-modal"
-      class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black z-50 hidden flex items-center justify-center p-4"
     >
       <div
         class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm"
@@ -277,10 +264,10 @@
     <!-- Фильтр (Bottom Sheet) -->
     <div
       id="filter-modal"
-      class="fixed inset-0 bg-black/60 z-50 hidden flex flex-col justify-end"
+      class="fixed inset-0 bg-black z-50 hidden flex flex-col justify-end"
     >
       <div
-        class="bg-zinc-900 border-t border-zinc-800 rounded-t-3xl p-5 max-h-[85vh] flex flex-col"
+        class="bg-black border-t border-zinc-800 rounded-t-3xl p-5 max-h-[85vh] flex flex-col"
       >
         <div
           class="flex justify-between items-center pb-4 border-b border-zinc-800"
@@ -359,15 +346,15 @@
     <!-- Окно Просмотра Товара -->
     <div
       id="product-detail-modal"
-      class="fixed inset-0 bg-black/90 z-50 hidden overflow-y-auto"
+      class="fixed inset-0 bg-black z-50 hidden overflow-y-auto"
     >
       <div
-        class="min-h-screen p-4 flex flex-col justify-between max-w-lg mx-auto"
+        class="min-h-screen bg-black p-4 flex flex-col justify-between max-w-lg mx-auto"
       >
         <div>
           <button
             onclick="closeProductDetail()"
-            class="p-2 bg-zinc-800/80 rounded-full text-white mb-4"
+            class="p-2 bg-zinc-900 rounded-full text-white mb-4"
           >
             <svg
               class="w-6 h-6"
@@ -409,9 +396,9 @@
     <!-- Модалка Добавления / Изменения Товара -->
     <div
       id="form-modal"
-      class="fixed inset-0 bg-black/90 z-50 hidden overflow-y-auto"
+      class="fixed inset-0 bg-black z-50 hidden overflow-y-auto"
     >
-      <div class="min-h-screen p-4 max-w-lg mx-auto">
+      <div class="min-h-screen bg-black p-4 max-w-lg mx-auto">
         <div class="flex justify-between items-center mb-6">
           <h2 id="form-title" class="text-xl font-bold">Добавить позицию</h2>
           <button
@@ -627,33 +614,33 @@
       }
 
       function updateAdminUI() {
+        const statsBtn = document.getElementById("stats-action-btn");
         const addBtn = document.getElementById("add-product-btn");
-        const csvBtn = document.getElementById("import-csv-btn");
         const authBtn = document.getElementById("auth-action-btn");
         const adminDetailActions = document.getElementById(
           "admin-detail-actions",
         );
+        const statsModal = document.getElementById("stats-modal");
 
         if (currentAdmin) {
+          statsBtn.classList.remove("hidden");
+          statsBtn.classList.add("flex");
           addBtn.classList.remove("hidden");
           addBtn.classList.add("flex");
-          csvBtn.classList.remove("hidden");
-          csvBtn.classList.add("inline-flex");
           authBtn.innerText = "Выйти";
           adminDetailActions.classList.remove("hidden");
         } else {
+          statsBtn.classList.add("hidden");
+          statsBtn.classList.remove("flex");
           addBtn.classList.add("hidden");
           addBtn.classList.remove("flex");
-          csvBtn.classList.add("hidden");
-          csvBtn.classList.remove("inline-flex");
           authBtn.innerText = "Войти как админ";
           adminDetailActions.classList.add("hidden");
+          statsModal.classList.add("hidden");
         }
 
         renderProducts();
-        if (
-          !document.getElementById("stats-modal").classList.contains("hidden")
-        ) {
+        if (currentAdmin && !statsModal.classList.contains("hidden")) {
           updateStats();
         }
         if (
@@ -713,6 +700,7 @@
               }));
               renderProducts();
               if (
+                currentAdmin &&
                 !document
                   .getElementById("stats-modal")
                   .classList.contains("hidden")
@@ -760,13 +748,13 @@
         filtered.forEach((item) => {
           const card = document.createElement("div");
           card.className =
-            "bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800/80 cursor-pointer active:scale-95 transition";
+            "bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800/80 cursor-pointer active:scale-95 transition";
           card.onclick = () => openProductDetail(item.id);
           card.innerHTML = `
           <div class="aspect-square bg-zinc-800 relative">
             <img src="${item.photo}" class="w-full h-full object-cover">
           </div>
-          ${currentAdmin ? `<div class="p-3"><span class="text-xl font-bold text-white">${(Number(item.price || 0) * 1000).toLocaleString("ru-RU")}</span></div>` : ""}
+          ${currentAdmin ? `<div class="px-2.5 py-1.5 leading-tight"><span class="text-xl font-bold text-white">${(Number(item.price || 0) * 1000).toLocaleString("ru-RU")}</span></div>` : ""}
         `;
           grid.appendChild(card);
         });
@@ -1325,6 +1313,7 @@
       // ЛОГИКА СТАТИСТИКИ И ГРАФИКА
       // ==========================================
       function openStatsModal() {
+        if (!currentAdmin) return;
         initStatsOptions();
         updateStats();
         document.getElementById("stats-modal").classList.remove("hidden");
