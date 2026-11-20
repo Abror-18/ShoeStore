@@ -822,8 +822,8 @@
         sizes.forEach((s) => {
           const btn = document.createElement("button");
           const active = isSelected(s);
-          btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border border-white text-white transition ${
-            active ? "bg-blue-600" : "bg-black"
+          btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border transition text-white ${
+            active ? "bg-blue-600 border-blue-500" : "bg-black border-white"
           }`;
           btn.innerText = s;
           btn.onclick = (e) => {
