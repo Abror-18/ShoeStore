@@ -12,17 +12,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <!-- PWA Manifest -->
-    <link
-      rel="manifest"
-      href='data:application/json;charset=utf-8,{
-      "name": "Обувной Магазин",
-      "short_name": "Обувь",
-      "start_url": ".",
-      "display": "standalone",
-      "background_color": "#000000",
-      "theme_color": "#000000"
-    }'
-    />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#000000" />
 
     <style>
       body {
@@ -603,6 +594,14 @@
         listenAuthChanges();
         loadProducts();
       });
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch((err) => {
+            console.error("Ошибка регистрации Service Worker:", err);
+          });
+        });
+      }
 
       function listenAuthChanges() {
         if (isFirebaseReady) {
