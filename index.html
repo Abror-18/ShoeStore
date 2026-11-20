@@ -73,7 +73,7 @@
       <div class="flex items-center space-x-2">
         <button
           onclick="openFilter()"
-          class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-200 relative"
+          class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-white relative"
         >
           <svg
             class="w-5 h-5"
@@ -129,10 +129,10 @@
     >
       <div class="min-h-screen bg-black p-4 max-w-lg mx-auto">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Статистика остатков</h2>
+          <h2 class="text-xl font-bold text-white">Статистика остатков</h2>
           <button
             onclick="closeStatsModal()"
-            class="p-1 text-zinc-400 hover:text-white"
+            class="p-1 text-white hover:text-blue-400"
           >
             <svg
               class="w-6 h-6"
@@ -155,25 +155,25 @@
           class="space-y-4 mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800"
         >
           <div>
-            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+            <label class="text-xs font-semibold text-white mb-2 block"
               >Тип</label
             >
             <div id="stats-types" class="flex flex-wrap gap-1.5"></div>
           </div>
           <div>
-            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+            <label class="text-xs font-semibold text-white mb-2 block"
               >Пол</label
             >
             <div id="stats-genders" class="flex flex-wrap gap-1.5"></div>
           </div>
           <div>
-            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+            <label class="text-xs font-semibold text-white mb-2 block"
               >Цвет</label
             >
             <div id="stats-colors" class="flex flex-wrap gap-1.5"></div>
           </div>
           <div>
-            <label class="text-xs font-semibold text-zinc-400 mb-2 block"
+            <label class="text-xs font-semibold text-white mb-2 block"
               >Параметры</label
             >
             <div id="stats-params" class="flex flex-wrap gap-1.5"></div>
@@ -183,7 +183,7 @@
         <!-- 2. График остатков -->
         <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
           <div class="flex justify-between items-center mb-3">
-            <h3 class="text-sm font-semibold text-zinc-300">
+            <h3 class="text-sm font-semibold text-white">
               График по размерам (16–41)
             </h3>
             <span
@@ -200,7 +200,7 @@
 
         <!-- 3. Список количества по размерам -->
         <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-          <h3 class="text-sm font-semibold text-zinc-300 mb-3">
+          <h3 class="text-sm font-semibold text-white mb-3">
             Количество по размерам
           </h3>
           <div id="stats-list" class="grid grid-cols-2 gap-2 text-sm"></div>
@@ -222,23 +222,23 @@
       <div
         class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm"
       >
-        <h2 class="text-lg font-bold mb-4">Вход администратора</h2>
+        <h2 class="text-lg font-bold text-white mb-4">Вход администратора</h2>
         <input
           type="email"
           id="auth-email"
           placeholder="Email"
-          class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-blue-500"
+          class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-blue-500"
         />
         <input
           type="password"
           id="auth-password"
           placeholder="Пароль"
-          class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-blue-500"
+          class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-blue-500"
         />
         <div class="flex space-x-2">
           <button
             onclick="closeAuthModal()"
-            class="w-1/2 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-medium text-sm"
+            class="w-1/2 py-2.5 bg-zinc-800 text-white rounded-xl font-medium text-sm"
           >
             Отмена
           </button>
@@ -252,21 +252,19 @@
       </div>
     </div>
 
-    <!-- Фильтр (Bottom Sheet) -->
+    <!-- Фильтр (На весь экран) -->
     <div
       id="filter-modal"
-      class="fixed inset-0 bg-black z-50 hidden flex flex-col justify-end"
+      class="fixed inset-0 bg-black z-50 hidden flex flex-col h-screen w-screen"
     >
-      <div
-        class="bg-black border-t border-zinc-800 rounded-t-3xl p-5 max-h-[85vh] flex flex-col"
-      >
+      <div class="bg-black p-4 flex-1 flex flex-col overflow-hidden">
         <div
           class="flex justify-between items-center pb-4 border-b border-zinc-800"
         >
-          <h3 class="text-lg font-bold">Фильтр</h3>
+          <h3 class="text-lg font-bold text-white">Фильтр</h3>
           <button
             onclick="closeFilter()"
-            class="p-1 text-zinc-400 hover:text-white"
+            class="p-1 text-white hover:text-blue-400"
           >
             <svg
               class="w-6 h-6"
@@ -286,41 +284,41 @@
 
         <div class="overflow-y-auto py-4 space-y-5 custom-scrollbar flex-1">
           <div>
-            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+            <label class="text-sm font-semibold text-white mb-2 block"
               >Тип</label
             >
             <div id="filter-type-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+            <label class="text-sm font-semibold text-white mb-2 block"
               >Пол</label
             >
             <div id="filter-gender-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+            <label class="text-sm font-semibold text-white mb-2 block"
               >Цвет</label
             >
             <div id="filter-color-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+            <label class="text-sm font-semibold text-white mb-2 block"
               >Параметры</label
             >
             <div id="filter-params-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-zinc-400 mb-2 block"
+            <label class="text-sm font-semibold text-white mb-2 block"
               >Размеры</label
             >
-            <div id="filter-sizes-group" class="grid grid-cols-6 gap-2"></div>
+            <div id="filter-sizes-group" class="grid grid-cols-6 gap-1"></div>
           </div>
         </div>
 
         <div class="pt-4 border-t border-zinc-800 grid grid-cols-2 gap-3">
           <button
             onclick="resetFilters()"
-            class="py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl text-sm"
+            class="py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-xl text-sm"
           >
             Очистить все
           </button>
@@ -370,7 +368,7 @@
         >
           <button
             onclick="openEditModalCurrent()"
-            class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl text-sm"
+            class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm"
           >
             Изменить
           </button>
@@ -391,10 +389,12 @@
     >
       <div class="min-h-screen bg-black p-4 max-w-lg mx-auto">
         <div class="flex justify-between items-center mb-6">
-          <h2 id="form-title" class="text-xl font-bold">Добавить позицию</h2>
+          <h2 id="form-title" class="text-xl font-bold text-white">
+            Добавить позицию
+          </h2>
           <button
             onclick="closeFormModal()"
-            class="p-1 text-zinc-400 hover:text-white"
+            class="p-1 text-white hover:text-blue-400"
           >
             <svg
               class="w-6 h-6"
@@ -414,26 +414,26 @@
 
         <div class="space-y-5">
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-1"
+            <label class="text-sm font-medium text-white block mb-1"
               >Цена (в тысячах, например 200 = 200 000)</label
             >
             <input
               type="number"
               id="form-price"
               placeholder="например 200"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+              class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-1"
+            <label class="text-sm font-medium text-white block mb-1"
               >Фото товара</label
             >
             <input
               type="file"
               accept="image/*"
               onchange="handleImageUpload(event, 'photo')"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-300"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-white"
             />
             <div
               id="preview-photo"
@@ -444,14 +444,14 @@
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-1"
+            <label class="text-sm font-medium text-white block mb-1"
               >Расположение на складе (фото)</label
             >
             <input
               type="file"
               accept="image/*"
               onchange="handleImageUpload(event, 'locationPhoto')"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-300"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-white"
             />
             <div
               id="preview-locationPhoto"
@@ -462,54 +462,52 @@
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-2"
+            <label class="text-sm font-medium text-white block mb-2"
               >Тип (выберите один или несколько)</label
             >
             <div id="form-type-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-2"
-              >Пол</label
-            >
+            <label class="text-sm font-medium text-white block mb-2">Пол</label>
             <div id="form-gender-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-2"
+            <label class="text-sm font-medium text-white block mb-2"
               >Цвет</label
             >
             <div id="form-color-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-2"
+            <label class="text-sm font-medium text-white block mb-2"
               >Параметры</label
             >
             <div id="form-params-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-2"
+            <label class="text-sm font-medium text-white block mb-2"
               >Размеры</label
             >
-            <div id="form-sizes-group" class="grid grid-cols-6 gap-2"></div>
+            <div id="form-sizes-group" class="grid grid-cols-6 gap-1"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-zinc-300 block mb-2"
+            <label class="text-sm font-medium text-white block mb-2"
               >Доп. размеры</label
             >
             <div
               id="form-extra-sizes-group"
-              class="grid grid-cols-6 gap-2"
+              class="grid grid-cols-6 gap-1"
             ></div>
           </div>
 
           <div class="pt-4 grid grid-cols-2 gap-3">
             <button
               onclick="closeFormModal()"
-              class="py-3 bg-zinc-800 text-zinc-300 font-semibold rounded-xl text-sm"
+              class="py-3 bg-zinc-800 text-white font-semibold rounded-xl text-sm"
             >
               Отменить
             </button>
@@ -798,7 +796,7 @@
           btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-medium border transition ${
             selected
               ? "bg-blue-600 border-blue-500 text-white"
-              : "bg-zinc-800 border-zinc-700 text-zinc-300"
+              : "bg-zinc-800 border-zinc-700 text-white"
           }`;
           btn.innerText = opt;
           btn.onclick = (e) => {
@@ -824,10 +822,8 @@
         sizes.forEach((s) => {
           const btn = document.createElement("button");
           const active = isSelected(s);
-          btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border transition ${
-            active
-              ? "border-blue-500 text-blue-400 bg-blue-500/10"
-              : "border-zinc-800 text-zinc-400 bg-zinc-900"
+          btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border border-white text-white transition ${
+            active ? "bg-blue-600" : "bg-black"
           }`;
           btn.innerText = s;
           btn.onclick = (e) => {
@@ -850,7 +846,6 @@
         initFilterOptions();
         renderProducts();
         document.getElementById("filter-indicator").classList.add("hidden");
-        closeFilter();
       }
       function applyFilters() {
         const active =
@@ -864,6 +859,13 @@
           .classList.toggle("hidden", !active);
         renderProducts();
         closeFilter();
+      }
+
+      function sortAsc(arr) {
+        return [...(arr || [])]
+          .map((x) => Number(x))
+          .filter((x) => !Number.isNaN(x))
+          .sort((a, b) => a - b);
       }
 
       function openProductDetail(id) {
@@ -885,16 +887,19 @@
           : p.param || "";
         const fullPrice = (Number(p.price || 0) * 1000).toLocaleString("ru-RU");
 
+        const sortedSizes = sortAsc(p.sizes);
+        const sortedExtraSizes = sortAsc(p.extraSizes);
+
         const content = document.getElementById("detail-content");
         content.innerHTML = `
-        ${currentAdmin ? `<div class="text-3xl font-bold text-center mb-4">${fullPrice}</div>` : ""}
+        ${currentAdmin ? `<div class="text-3xl font-bold text-white text-center mb-4">${fullPrice}</div>` : ""}
         <div class="rounded-2xl overflow-hidden mb-4 bg-zinc-800 aspect-square">
           <img src="${p.photo}" class="w-full h-full object-cover">
         </div>
         <div class="mb-6">
-          <div class="text-xs font-semibold text-zinc-400 uppercase mb-1">Размеры</div>
-          <div class="text-xl font-medium mb-1">${(p.sizes || []).join(", ") || "—"}</div>
-          ${p.extraSizes && p.extraSizes.length > 0 ? `<div class="text-2xl font-bold text-blue-400">${p.extraSizes.join(", ")}</div>` : ""}
+          <div class="text-xs font-semibold text-white uppercase mb-1">Размеры</div>
+          <div class="text-xl font-medium text-white mb-1">${sortedSizes.join(", ") || "—"}</div>
+          ${sortedExtraSizes.length > 0 ? `<div class="text-xl font-medium text-white">${sortedExtraSizes.join(", ")}</div>` : ""}
         </div>
         ${
           currentAdmin
@@ -908,11 +913,11 @@
           `
               : ""
           }
-          <div class="space-y-1 text-xl font-semibold mb-6">
+          <div class="space-y-1 text-xl font-semibold text-white mb-6">
             <div>Цвет: ${colorsStr || "—"}</div>
             <div>Тип: ${typesStr || "—"}</div>
             <div>Пол: ${gendersStr || "—"}</div>
-            <div class="text-zinc-400 text-base">Параметры: ${paramsStr || "—"}</div>
+            <div class="text-white text-base">Параметры: ${paramsStr || "—"}</div>
           </div>
         `
             : ""
@@ -989,12 +994,12 @@
               const getKbSize = (str) =>
                 Math.round((str.length * (3 / 4)) / 1024);
 
-              while (getKbSize(dataUrl) > 200 && quality > 0.25) {
+              while (getKbSize(dataUrl) > 150 && quality > 0.25) {
                 quality -= 0.05;
                 dataUrl = canvas.toDataURL("image/jpeg", quality);
               }
 
-              if (getKbSize(dataUrl) > 200 && maxDimension > 500) {
+              if (getKbSize(dataUrl) > 150 && maxDimension > 500) {
                 resolve(compressImageFile(file, maxDimension - 150));
                 return;
               }
@@ -1411,7 +1416,7 @@
           textX.setAttribute("x", x + (colWidth - 8) / 2);
           textX.setAttribute("y", 162);
           textX.setAttribute("text-anchor", "middle");
-          textX.setAttribute("fill", "#a1a1aa");
+          textX.setAttribute("fill", "#ffffff");
           textX.setAttribute("font-size", "10");
           textX.textContent = size;
 
@@ -1445,9 +1450,9 @@
           item.className = `p-2 rounded-xl border text-xs flex justify-between items-center ${
             count > 0
               ? "bg-zinc-800 border-zinc-700 text-white font-medium"
-              : "bg-zinc-900/50 border-zinc-800/50 text-zinc-500"
+              : "bg-zinc-900 border-zinc-800 text-white"
           }`;
-          item.innerHTML = `<span>${s}</span> <span class="${count > 0 ? "text-blue-400 font-bold" : ""}">${count} шт.</span>`;
+          item.innerHTML = `<span>${s}</span> <span class="${count > 0 ? "text-blue-400 font-bold" : "text-white"}">${count} шт.</span>`;
           list.appendChild(item);
         });
       }
@@ -1456,14 +1461,14 @@
         const summary = document.getElementById("stats-summary");
         summary.innerHTML = `
         <div class="flex justify-between items-center text-sm">
-          <span class="text-zinc-400">Всего пар обуви:</span>
+          <span class="text-white">Всего пар обуви:</span>
           <span class="text-white font-bold text-base">${totalPairs} шт.</span>
         </div>
         ${
           currentAdmin
             ? `
           <div class="flex justify-between items-center text-sm pt-2 border-t border-zinc-800">
-            <span class="text-zinc-400">Общая сумма:</span>
+            <span class="text-white">Общая сумма:</span>
             <span class="text-blue-400 font-bold text-lg">${totalPrice.toLocaleString("ru-RU")}</span>
           </div>
         `
