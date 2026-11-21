@@ -994,12 +994,12 @@
               const getKbSize = (str) =>
                 Math.round((str.length * (3 / 4)) / 1024);
 
-              while (getKbSize(dataUrl) > 150 && quality > 0.25) {
+              while (getKbSize(dataUrl) > 100 && quality > 0.25) {
                 quality -= 0.05;
                 dataUrl = canvas.toDataURL("image/jpeg", quality);
               }
 
-              if (getKbSize(dataUrl) > 150 && maxDimension > 500) {
+              if (getKbSize(dataUrl) > 100 && maxDimension > 500) {
                 resolve(compressImageFile(file, maxDimension - 150));
                 return;
               }
@@ -1103,6 +1103,67 @@
         document.getElementById("form-modal").classList.add("hidden");
       }
 
+      const QUEUE_KEY = "my_shoes_pending_queue";
+      let toastTimer = null;
+
+      function showBottomToast(message) {
+        const toast = document.getElementById("bottom-toast");
+        if (!toast) return;
+        toast.innerText = message;
+        toast.classList.remove("hidden");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 2000);
+      }
+
+      function getPendingQueue() {
+        try {
+          return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function setPendingQueue(queue) {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      }
+
+      async function flushPendingQueue() {
+        if (!isFirebaseReady) return;
+        const queue = getPendingQueue();
+        if (queue.length === 0) return;
+
+        const remaining = [];
+        for (const task of queue) {
+          try {
+            if (task.mode === "update" && task.productId) {
+              await db
+                .collection("products")
+                .doc(task.productId)
+                .update(task.payload);
+              showBottomToast("Изменено");
+            } else {
+              await db.collection("products").add(task.payload);
+              showBottomToast("Отправлено");
+            }
+          } catch (err) {
+            remaining.push(task);
+          }
+        }
+        setPendingQueue(remaining);
+      }
+
+      window.addEventListener("online", () => {
+        flushPendingQueue();
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          flushPendingQueue();
+        }
+      });
+
       async function saveProduct() {
         const price = document.getElementById("form-price").value;
         if (!price) {
@@ -1126,28 +1187,37 @@
           extraSizes: formData.extraSizes,
         };
 
-        try {
-          if (isFirebaseReady) {
-            if (selectedProductId)
-              await db
-                .collection("products")
-                .doc(selectedProductId)
-                .update(payload);
-            else await db.collection("products").add(payload);
+        const isEdit = Boolean(selectedProductId);
+        const editId = selectedProductId;
+
+        closeFormModal();
+
+        if (!isFirebaseReady) {
+          if (isEdit) {
+            const idx = products.findIndex((x) => x.id === editId);
+            if (idx > -1) products[idx] = { id: editId, ...payload };
+            showBottomToast("Изменено");
           } else {
-            if (selectedProductId) {
-              const idx = products.findIndex((x) => x.id === selectedProductId);
-              products[idx] = { id: selectedProductId, ...payload };
-            } else {
-              products.push({ id: Date.now().toString(), ...payload });
-            }
-            localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
-            renderProducts();
+            products.push({ id: Date.now().toString(), ...payload });
+            showBottomToast("Отправлено");
           }
-          closeFormModal();
-        } catch (err) {
-          alert("Ошибка сохранения: " + err.message);
+          localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
+          renderProducts();
+          return;
         }
+
+        const queue = getPendingQueue();
+        queue.push({
+          id:
+            Date.now().toString() +
+            "_" +
+            Math.random().toString(36).slice(2, 7),
+          mode: isEdit ? "update" : "add",
+          productId: editId,
+          payload,
+        });
+        setPendingQueue(queue);
+        flushPendingQueue();
       }
 
       async function deleteCurrentProduct() {
@@ -1495,5 +1565,9 @@
         ];
       }
     </script>
+    <div
+      id="bottom-toast"
+      class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-white text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-200"
+    ></div>
   </body>
 </html>
