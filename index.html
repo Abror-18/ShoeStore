@@ -428,10 +428,35 @@
             >
             <input
               type="file"
+              id="input-photo-file"
               accept="image/*"
               onchange="handleImageUpload(event, 'photo')"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm text-white"
+              class="hidden"
             />
+            <input
+              type="file"
+              id="input-photo-camera"
+              accept="image/*"
+              capture="environment"
+              onchange="handleImageUpload(event, 'photo')"
+              class="hidden"
+            />
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onclick="document.getElementById('input-photo-camera').click()"
+                class="py-3 px-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-medium text-white text-center transition"
+              >
+                Камера
+              </button>
+              <button
+                type="button"
+                onclick="document.getElementById('input-photo-file').click()"
+                class="py-3 px-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-medium text-white text-center transition"
+              >
+                Файл
+              </button>
+            </div>
             <div
               id="preview-photo"
               class="mt-2 hidden h-24 w-24 rounded-xl overflow-hidden border border-zinc-700"
@@ -446,10 +471,39 @@
             >
             <input
               type="file"
+              id="input-locationPhoto-file"
               accept="image/*"
               onchange="handleImageUpload(event, 'locationPhoto')"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm text-white"
+              class="hidden"
             />
+            <input
+              type="file"
+              id="input-locationPhoto-camera"
+              accept="image/*"
+              capture="environment"
+              onchange="handleImageUpload(event, 'locationPhoto')"
+              class="hidden"
+            />
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onclick="
+                  document.getElementById('input-locationPhoto-camera').click()
+                "
+                class="py-3 px-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-medium text-white text-center transition"
+              >
+                Камера
+              </button>
+              <button
+                type="button"
+                onclick="
+                  document.getElementById('input-locationPhoto-file').click()
+                "
+                class="py-3 px-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-medium text-white text-center transition"
+              >
+                Файл
+              </button>
+            </div>
             <div
               id="preview-locationPhoto"
               class="mt-2 hidden h-24 w-24 rounded-xl overflow-hidden border border-zinc-700"
@@ -673,7 +727,7 @@
             await auth.signInWithEmailAndPassword(email, pass);
             closeAuthModal();
           } catch (e) {
-            alert("Ошибка входа: " + e.message);
+            showBottomToast("Ошибка входа: " + e.message, "error");
           }
         } else {
           if (pass === "admin") {
@@ -681,7 +735,7 @@
             updateAdminUI();
             closeAuthModal();
           } else {
-            alert("Пароль: admin");
+            showBottomToast("Пароль: admin", "error");
           }
         }
       }
@@ -1025,8 +1079,21 @@
             prev.querySelector("img").src = compressedDataUrl;
           }
         } catch (err) {
-          alert("Не удалось обработать изображение");
+          showBottomToast("Не удалось обработать изображение", "error");
         }
+      }
+
+      function resetImageInputs() {
+        const ids = [
+          "input-photo-file",
+          "input-photo-camera",
+          "input-locationPhoto-file",
+          "input-locationPhoto-camera",
+        ];
+        ids.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
       }
 
       function openAddModal() {
@@ -1041,6 +1108,7 @@
           photo: "",
           locationPhoto: "",
         };
+        resetImageInputs();
         document.getElementById("form-title").innerText = "Добавить позицию";
         document.getElementById("form-price").value = "";
         document.getElementById("preview-photo").classList.add("hidden");
@@ -1078,6 +1146,7 @@
           locationPhoto: p.locationPhoto || "",
         };
 
+        resetImageInputs();
         document.getElementById("form-title").innerText = "Изменить позицию";
         document.getElementById("form-price").value = p.price;
 
@@ -1105,11 +1174,27 @@
       const QUEUE_KEY = "my_shoes_pending_queue";
       let toastTimer = null;
 
-      function showBottomToast(message) {
+      function showBottomToast(message, type = "success") {
         const toast = document.getElementById("bottom-toast");
         if (!toast) return;
+
         toast.innerText = message;
-        toast.classList.remove("hidden");
+        toast.classList.remove(
+          "hidden",
+          "bg-zinc-900",
+          "border-zinc-700",
+          "bg-green-600",
+          "border-green-500",
+          "bg-red-600",
+          "border-red-500",
+        );
+
+        if (type === "error") {
+          toast.classList.add("bg-red-600", "border-red-500");
+        } else {
+          toast.classList.add("bg-green-600", "border-green-500");
+        }
+
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
           toast.classList.add("hidden");
@@ -1141,10 +1226,10 @@
                 .collection("products")
                 .doc(task.productId)
                 .update(task.payload);
-              showBottomToast("Изменено");
+              showBottomToast("Изменено", "success");
             } else {
               await db.collection("products").add(task.payload);
-              showBottomToast("Отправлено");
+              showBottomToast("Отправлено", "success");
             }
           } catch (err) {
             remaining.push(task);
@@ -1166,11 +1251,11 @@
       async function saveProduct() {
         const price = document.getElementById("form-price").value;
         if (!price) {
-          alert("Укажите цену");
+          showBottomToast("Укажите цену", "error");
           return;
         }
         if (!formData.photo) {
-          alert("Загрузите фото товара");
+          showBottomToast("Загрузите фото товара", "error");
           return;
         }
 
@@ -1195,10 +1280,10 @@
           if (isEdit) {
             const idx = products.findIndex((x) => x.id === editId);
             if (idx > -1) products[idx] = { id: editId, ...payload };
-            showBottomToast("Изменено");
+            showBottomToast("Изменено", "success");
           } else {
             products.push({ id: Date.now().toString(), ...payload });
-            showBottomToast("Отправлено");
+            showBottomToast("Отправлено", "success");
           }
           localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
           renderProducts();
@@ -1295,14 +1380,17 @@
         event.target.value = "";
         if (!file) return;
         if (!currentAdmin) {
-          alert("Войдите как администратор для импорта");
+          showBottomToast("Войдите как администратор для импорта", "error");
           return;
         }
 
         const text = await file.text();
         const rows = parseCsvRows(text);
         if (rows.length < 2) {
-          alert("CSV файл пуст или не содержит строк товаров");
+          showBottomToast(
+            "CSV файл пуст или не содержит строк товаров",
+            "error",
+          );
           return;
         }
 
@@ -1364,7 +1452,10 @@
               });
               await batch.commit();
             }
-            alert(`Успешно загружено позиций: ${items.length}`);
+            showBottomToast(
+              `Успешно загружено позиций: ${items.length}`,
+              "success",
+            );
           } else {
             products = [
               ...products,
@@ -1375,10 +1466,10 @@
             ];
             localStorage.setItem("my_shoes_catalog", JSON.stringify(products));
             renderProducts();
-            alert(`Добавлено локально: ${items.length}`);
+            showBottomToast(`Добавлено локально: ${items.length}`, "success");
           }
         } catch (err) {
-          alert("Ошибка при импорте: " + err.message);
+          showBottomToast("Ошибка при импорте: " + err.message, "error");
         }
       }
 
@@ -1566,7 +1657,7 @@
     </script>
     <div
       id="bottom-toast"
-      class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-white text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-200"
+      class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2 rounded-full bg-green-600 border border-green-500 text-white text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-200"
     ></div>
   </body>
 </html>
