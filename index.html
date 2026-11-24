@@ -258,13 +258,13 @@
         <div
           class="flex justify-between items-center pb-4 border-b border-zinc-800"
         >
-          <h3 class="text-lg font-bold text-white">Фильтр</h3>
+          <h3 class="text-xl font-bold text-white">Фильтр</h3>
           <button
             onclick="closeFilter()"
             class="p-1 text-white hover:text-blue-400"
           >
             <svg
-              class="w-6 h-6"
+              class="w-7 h-7"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -279,49 +279,49 @@
           </button>
         </div>
 
-        <div class="overflow-y-auto py-4 space-y-5 custom-scrollbar flex-1">
+        <div class="overflow-y-auto py-4 space-y-6 custom-scrollbar flex-1">
           <div>
-            <label class="text-sm font-semibold text-white mb-2 block"
+            <label class="text-base font-semibold text-white mb-2.5 block"
               >Тип</label
             >
             <div id="filter-type-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-white mb-2 block"
+            <label class="text-base font-semibold text-white mb-2.5 block"
               >Пол</label
             >
             <div id="filter-gender-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-white mb-2 block"
+            <label class="text-base font-semibold text-white mb-2.5 block"
               >Цвет</label
             >
             <div id="filter-color-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-white mb-2 block"
+            <label class="text-base font-semibold text-white mb-2.5 block"
               >Параметры</label
             >
             <div id="filter-params-group" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
-            <label class="text-sm font-semibold text-white mb-2 block"
+            <label class="text-base font-semibold text-white mb-2.5 block"
               >Размеры</label
             >
-            <div id="filter-sizes-group" class="grid grid-cols-6 gap-1"></div>
+            <div id="filter-sizes-group" class="grid grid-cols-6 gap-1.5"></div>
           </div>
         </div>
 
         <div class="pt-4 border-t border-zinc-800 grid grid-cols-2 gap-3">
           <button
             onclick="resetFilters()"
-            class="py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-xl text-sm"
+            class="py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-xl text-base"
           >
             Очистить все
           </button>
           <button
             onclick="applyFilters()"
-            class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm"
+            class="py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-base"
           >
             Готово
           </button>
@@ -386,7 +386,7 @@
     >
       <div class="min-h-screen bg-black p-4 max-w-lg mx-auto">
         <div class="flex justify-between items-center mb-6">
-          <h2 id="form-title" class="text-xl font-bold text-white">
+          <h2 id="form-title" class="text-2xl font-bold text-white">
             Добавить позицию
           </h2>
           <button
@@ -394,7 +394,7 @@
             class="p-1 text-white hover:text-blue-400"
           >
             <svg
-              class="w-6 h-6"
+              class="w-7 h-7"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -409,28 +409,28 @@
           </button>
         </div>
 
-        <div class="space-y-5">
+        <div class="space-y-6">
           <div>
-            <label class="text-sm font-medium text-white block mb-1"
+            <label class="text-base font-medium text-white block mb-1.5"
               >Цена</label
             >
             <input
               type="number"
               id="form-price"
               placeholder="например 200"
-              class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+              class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-1"
+            <label class="text-base font-medium text-white block mb-1.5"
               >Фото товара</label
             >
             <input
               type="file"
               accept="image/*"
               onchange="handleImageUpload(event, 'photo')"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-white"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm text-white"
             />
             <div
               id="preview-photo"
@@ -441,14 +441,14 @@
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-1"
+            <label class="text-base font-medium text-white block mb-1.5"
               >Расположение</label
             >
             <input
               type="file"
               accept="image/*"
               onchange="handleImageUpload(event, 'locationPhoto')"
-              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-xs text-white"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm text-white"
             />
             <div
               id="preview-locationPhoto"
@@ -459,56 +459,60 @@
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-2">Тип</label>
+            <label class="text-base font-medium text-white block mb-2.5"
+              >Тип</label
+            >
             <div id="form-type-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-2">Пол</label>
+            <label class="text-base font-medium text-white block mb-2.5"
+              >Пол</label
+            >
             <div id="form-gender-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-2"
+            <label class="text-base font-medium text-white block mb-2.5"
               >Цвет</label
             >
             <div id="form-color-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-2"
+            <label class="text-base font-medium text-white block mb-2.5"
               >Параметры</label
             >
             <div id="form-params-group" class="flex flex-wrap gap-2"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-2"
+            <label class="text-base font-medium text-white block mb-2.5"
               >Размеры</label
             >
-            <div id="form-sizes-group" class="grid grid-cols-6 gap-1"></div>
+            <div id="form-sizes-group" class="grid grid-cols-6 gap-1.5"></div>
           </div>
 
           <div>
-            <label class="text-sm font-medium text-white block mb-2"
+            <label class="text-base font-medium text-white block mb-2.5"
               >Доп. размеры</label
             >
             <div
               id="form-extra-sizes-group"
-              class="grid grid-cols-6 gap-1"
+              class="grid grid-cols-6 gap-1.5"
             ></div>
           </div>
 
           <div class="pt-4 grid grid-cols-2 gap-3">
             <button
               onclick="closeFormModal()"
-              class="py-3 bg-zinc-800 text-white font-semibold rounded-xl text-sm"
+              class="py-3.5 bg-zinc-800 text-white font-semibold rounded-xl text-base"
             >
               Отменить
             </button>
             <button
               onclick="saveProduct()"
-              class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm"
+              class="py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-base"
             >
               Отправить
             </button>
@@ -788,7 +792,7 @@
         options.forEach((opt) => {
           const btn = document.createElement("button");
           const selected = targetArray.includes(opt);
-          btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-medium border transition ${
+          btn.className = `px-4 py-2 rounded-xl text-sm font-medium border transition ${
             selected
               ? "bg-blue-600 border-blue-500 text-white"
               : "bg-zinc-800 border-zinc-700 text-white"
@@ -817,7 +821,7 @@
         sizes.forEach((s) => {
           const btn = document.createElement("button");
           const active = isSelected(s);
-          btn.className = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border transition text-white ${
+          btn.className = `w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold border transition text-white ${
             active ? "bg-blue-600 border-blue-500" : "bg-black border-white"
           }`;
           btn.innerText = s;
