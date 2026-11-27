@@ -1,10 +1,11 @@
-const CACHE_NAME = "shoe-store-v3";
+const CACHE_NAME = "shoe-store-v2";
 
 // Ресурсы для обязательной предзагрузки при установке PWA
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "https://cdn.tailwindcss.com",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js",
@@ -55,8 +56,10 @@ self.addEventListener("fetch", (event) => {
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
+            // Если фото есть в кэше — отдаём мгновенно
             return cachedResponse;
           }
+          // Если фото нет — загружаем и сохраняем в кэш
           return fetch(event.request)
             .then((networkResponse) => {
               if (networkResponse && networkResponse.status === 200) {
@@ -65,13 +68,7 @@ self.addEventListener("fetch", (event) => {
               return networkResponse;
             })
             .catch(() => {
-              return (
-                cachedResponse ||
-                new Response("", {
-                  status: 504,
-                  statusText: "Gateway Timeout",
-                })
-              );
+              // Если сети нет и картинки в кэше нет — игнорируем
             });
         });
       }),
@@ -79,7 +76,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Для остального (HTML, JS библиотеки): отдаём из кэша и обновляем в фоне
+  // Для остального (HTML, Tailwind, JS библиотеки): отдаём из кэша и обновляем в фоне
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
@@ -92,13 +89,7 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         })
         .catch(() => {
-          return (
-            cachedResponse ||
-            new Response("", {
-              status: 504,
-              statusText: "Gateway Timeout",
-            })
-          );
+          // Ошибка сети — ничего страшного, отдадим кэш
         });
 
       return cachedResponse || fetchPromise;
