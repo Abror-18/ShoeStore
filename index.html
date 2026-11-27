@@ -37,7 +37,6 @@
     <header
       class="sticky top-0 z-20 bg-black border-b border-zinc-800 px-3 py-3 flex items-center justify-between"
     >
-      <!-- Левая часть: Статистика (только админ) и Вход/Выход Админа -->
       <div class="flex items-center space-x-2">
         <button
           id="stats-action-btn"
@@ -69,7 +68,6 @@
         </button>
       </div>
 
-      <!-- Правая часть: Фильтр и Добавление товара -->
       <div class="flex items-center space-x-2">
         <button
           onclick="openFilter()"
@@ -150,7 +148,6 @@
           </button>
         </div>
 
-        <!-- 1. Параметры/Фильтры для статистики -->
         <div
           class="space-y-4 mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800"
         >
@@ -180,7 +177,6 @@
           </div>
         </div>
 
-        <!-- 2. График остатков -->
         <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
           <div class="flex justify-between items-center mb-3">
             <h3 class="text-sm font-semibold text-white">График по размерам</h3>
@@ -189,13 +185,11 @@
               class="text-xs text-blue-400 font-medium"
             ></span>
           </div>
-
           <div class="overflow-x-auto custom-scrollbar pb-2">
             <div id="chart-container" class="min-w-[650px] h-48 relative"></div>
           </div>
         </div>
 
-        <!-- 3. Список количества по размерам -->
         <div class="mb-6 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
           <h3 class="text-sm font-semibold text-white mb-3">
             Количество по размерам
@@ -203,7 +197,6 @@
           <div id="stats-list" class="grid grid-cols-2 gap-2 text-sm"></div>
         </div>
 
-        <!-- 4. Итоговый блок в самом низу -->
         <div
           id="stats-summary"
           class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2"
@@ -211,7 +204,7 @@
       </div>
     </div>
 
-    <!-- Модальное окно Входа (Admin Auth) -->
+    <!-- Модальное окно Входа -->
     <div
       id="auth-modal"
       class="fixed inset-0 bg-black z-50 hidden flex items-center justify-center p-4"
@@ -249,7 +242,7 @@
       </div>
     </div>
 
-    <!-- Фильтр (На весь экран) -->
+    <!-- Фильтр -->
     <div
       id="filter-modal"
       class="fixed inset-0 bg-black z-50 hidden flex flex-col h-screen w-screen"
@@ -329,7 +322,7 @@
       </div>
     </div>
 
-    <!-- Окно Просмотра Товара -->
+    <!-- Просмотр Товара -->
     <div
       id="product-detail-modal"
       class="fixed inset-0 bg-black z-50 hidden overflow-y-auto"
@@ -802,7 +795,7 @@
           card.onclick = () => openProductDetail(item.id);
           card.innerHTML = `
           <div class="aspect-square bg-zinc-800 relative">
-            <img src="${item.photo}" class="w-full h-full object-cover">
+            <img src="${item.photo}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           </div>
           ${currentAdmin ? `<div class="px-2.5 py-1.5 leading-tight"><span class="text-xl font-bold text-white">${(Number(item.price || 0) * 1000).toLocaleString("ru-RU")}</span></div>` : ""}
         `;
@@ -947,7 +940,7 @@
         content.innerHTML = `
         ${currentAdmin ? `<div class="text-3xl font-bold text-white text-center mb-4">${fullPrice}</div>` : ""}
         <div class="rounded-2xl overflow-hidden mb-4 bg-zinc-800 aspect-square">
-          <img src="${p.photo}" class="w-full h-full object-cover">
+          <img src="${p.photo}" loading="lazy" decoding="async" class="w-full h-full object-cover">
         </div>
         <div class="mb-6">
           <div class="text-sm font-semibold text-white uppercase mb-1">Размеры</div>
@@ -961,7 +954,7 @@
             p.locationPhoto
               ? `
             <div class="rounded-2xl overflow-hidden mb-6 bg-zinc-800 aspect-square">
-              <img src="${p.locationPhoto}" class="w-full h-full object-cover">
+              <img src="${p.locationPhoto}" loading="lazy" decoding="async" class="w-full h-full object-cover">
             </div>
           `
               : ""
