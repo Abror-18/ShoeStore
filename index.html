@@ -734,6 +734,17 @@
       }
 
       function loadProducts() {
+        const local = localStorage.getItem("my_shoes_catalog");
+        if (local) {
+          try {
+            products = JSON.parse(local);
+            renderProducts();
+          } catch (e) {}
+        } else if (!isFirebaseReady) {
+          products = getDemoProducts();
+          renderProducts();
+        }
+
         if (isFirebaseReady) {
           db.collection("products").onSnapshot(
             (snapshot) => {
@@ -741,6 +752,12 @@
                 id: doc.id,
                 ...doc.data(),
               }));
+              try {
+                localStorage.setItem(
+                  "my_shoes_catalog",
+                  JSON.stringify(products),
+                );
+              } catch (e) {}
               renderProducts();
               if (
                 currentAdmin &&
@@ -755,10 +772,6 @@
               console.error("Ошибка загрузки из Firestore:", err);
             },
           );
-        } else {
-          const local = localStorage.getItem("my_shoes_catalog");
-          products = local ? JSON.parse(local) : getDemoProducts();
-          renderProducts();
         }
       }
 
