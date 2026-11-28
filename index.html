@@ -583,15 +583,29 @@
         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%2318181b'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2371717a' font-family='sans-serif' font-size='18'%3EНет фото%3C/text%3E%3C/svg%3E";
 
       let isFirebaseReady = false;
+      let db = null;
+      let auth = null;
+
       try {
         if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
           firebase.initializeApp(firebaseConfig);
-          isFirebaseReady = true;
-        }
-      } catch (e) {}
+          
+          db = firebase.firestore();
+          // Стабильное подключение через Long-Polling (без обрывов WebChannel)
+          db.settings({
+            experimentalForceLongPolling: true,
+            useFetchStreams: false,
+          });
 
-      const db = isFirebaseReady ? firebase.firestore() : null;
-      const auth = isFirebaseReady ? firebase.auth() : null;
+          auth = firebase.auth();
+          isFirebaseReady = true;
+
+          // Локальный кэш
+          db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+        }
+      } catch (e) {
+        console.error("Ошибка инициализации Firebase:", e);
+      }
 
       const TYPES = ["Кроссовки", "Ботинки", "Туфли", "Балетки"];
       const GENDERS = ["М", "Д"];
@@ -740,42 +754,55 @@
         const local = localStorage.getItem("my_shoes_catalog");
         if (local) {
           try {
-            products = JSON.parse(local);
-            renderProducts();
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              products = parsed;
+              renderProducts();
+            }
           } catch (e) {}
-        } else if (!isFirebaseReady) {
-          products = getDemoProducts();
-          renderProducts();
         }
 
-        if (isFirebaseReady) {
-          db.collection("products").onSnapshot(
-            (snapshot) => {
-              products = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              }));
-              try {
-                localStorage.setItem(
-                  "my_shoes_catalog",
-                  JSON.stringify(products),
-                );
-              } catch (e) {}
-              renderProducts();
-              if (
-                currentAdmin &&
-                !document
-                  .getElementById("stats-modal")
-                  .classList.contains("hidden")
-              ) {
-                updateStats();
-              }
-            },
-            (err) => {
-              console.error("Ошибка загрузки из Firestore:", err);
-            },
-          );
+        if (!isFirebaseReady) {
+          if (products.length === 0) {
+            products = getDemoProducts();
+            renderProducts();
+          }
+          return;
         }
+
+        if (products.length === 0) {
+          renderProducts(true);
+        }
+
+        db.collection("products").onSnapshot(
+          (snapshot) => {
+            products = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            try {
+              localStorage.setItem(
+                "my_shoes_catalog",
+                JSON.stringify(products),
+              );
+            } catch (e) {}
+            renderProducts(false);
+            if (
+              currentAdmin &&
+              !document
+                .getElementById("stats-modal")
+                .classList.contains("hidden")
+            ) {
+              updateStats();
+            }
+          },
+          (err) => {
+            console.error("Ошибка загрузки из Firestore:", err);
+            if (products.length === 0) {
+              renderProducts(false);
+            }
+          },
+        );
       }
 
       function matchArray(itemValues, filterValues) {
@@ -788,9 +815,15 @@
         return filterValues.some((val) => arr.includes(val));
       }
 
-      function renderProducts() {
+      function renderProducts(isLoading = false) {
         const grid = document.getElementById("product-grid");
         grid.innerHTML = "";
+
+        if (isLoading && products.length === 0) {
+          grid.innerHTML =
+            '<div class="col-span-2 py-12 text-center text-zinc-400 text-sm">Загрузка каталога...</div>';
+          return;
+        }
 
         const filtered = products.filter((p) => {
           if (!matchArray(p.types || p.type, filters.types)) return false;
