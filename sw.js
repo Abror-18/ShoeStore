@@ -1,6 +1,5 @@
-const CACHE_NAME = "shoe-store-v2";
+const CACHE_NAME = "shoe-store-v3";
 
-// Ресурсы для обязательной предзагрузки при установке PWA
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
@@ -9,9 +8,9 @@ const PRECACHE_ASSETS = [
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js",
+  "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js",
 ];
 
-// 1. Установка: сразу сохраняем каркас приложения и библиотеки
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -23,7 +22,6 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// 2. Активация: удаляем старые версии кэша, если версия обновилась
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -41,13 +39,11 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// 3. Перехват запросов (Stale-While-Revalidate + Cache First для картинок)
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
 
-  // Для внешних изображений (например, фото товаров из Unsplash или Firebase Storage)
   if (
     event.request.destination === "image" ||
     url.pathname.match(/\.(png|jpg|jpeg|svg|webp)$/i)
@@ -56,10 +52,8 @@ self.addEventListener("fetch", (event) => {
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
-            // Если фото есть в кэше — отдаём мгновенно
             return cachedResponse;
           }
-          // Если фото нет — загружаем и сохраняем в кэш
           return fetch(event.request)
             .then((networkResponse) => {
               if (networkResponse && networkResponse.status === 200) {
@@ -68,7 +62,7 @@ self.addEventListener("fetch", (event) => {
               return networkResponse;
             })
             .catch(() => {
-              // Если сети нет и картинки в кэше нет — игнорируем
+              return new Response("", { status: 504, statusText: "Offline" });
             });
         });
       }),
@@ -76,7 +70,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Для остального (HTML, Tailwind, JS библиотеки): отдаём из кэша и обновляем в фоне
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
@@ -89,7 +82,7 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Ошибка сети — ничего страшного, отдадим кэш
+          return cachedResponse;
         });
 
       return cachedResponse || fetchPromise;
