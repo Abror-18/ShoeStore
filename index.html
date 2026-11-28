@@ -579,6 +579,9 @@
         measurementId: "G-RER47GLJFX",
       };
 
+      const FALLBACK_IMG =
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%2318181b'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2371717a' font-family='sans-serif' font-size='18'%3EНет фото%3C/text%3E%3C/svg%3E";
+
       let isFirebaseReady = false;
       try {
         if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
@@ -806,9 +809,10 @@
           card.className =
             "bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800/80 cursor-pointer active:scale-95 transition";
           card.onclick = () => openProductDetail(item.id);
+          const safePhoto = item.photo || FALLBACK_IMG;
           card.innerHTML = `
           <div class="aspect-square bg-zinc-800 relative">
-            <img src="${item.photo}" loading="lazy" decoding="async" class="w-full h-full object-cover">
+            <img src="${safePhoto}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMG}'" class="w-full h-full object-cover">
           </div>
           ${currentAdmin ? `<div class="px-2.5 py-1.5 leading-tight"><span class="text-xl font-bold text-white">${(Number(item.price || 0) * 1000).toLocaleString("ru-RU")}</span></div>` : ""}
         `;
@@ -948,12 +952,14 @@
 
         const sortedSizes = sortAsc(p.sizes);
         const sortedExtraSizes = sortAsc(p.extraSizes);
+        const safePhoto = p.photo || FALLBACK_IMG;
+        const safeLocationPhoto = p.locationPhoto || FALLBACK_IMG;
 
         const content = document.getElementById("detail-content");
         content.innerHTML = `
         ${currentAdmin ? `<div class="text-3xl font-bold text-white text-center mb-4">${fullPrice}</div>` : ""}
         <div class="rounded-2xl overflow-hidden mb-4 bg-zinc-800 aspect-square">
-          <img src="${p.photo}" loading="lazy" decoding="async" class="w-full h-full object-cover">
+          <img src="${safePhoto}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMG}'" class="w-full h-full object-cover">
         </div>
         <div class="mb-6">
           <div class="text-sm font-semibold text-white uppercase mb-1">Размеры</div>
@@ -967,7 +973,7 @@
             p.locationPhoto
               ? `
             <div class="rounded-2xl overflow-hidden mb-6 bg-zinc-800 aspect-square">
-              <img src="${p.locationPhoto}" loading="lazy" decoding="async" class="w-full h-full object-cover">
+              <img src="${safeLocationPhoto}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMG}'" class="w-full h-full object-cover">
             </div>
           `
               : ""
@@ -1088,6 +1094,83 @@
         } catch (err) {
           showBottomToast("Не удалось обработать изображение", "error");
         }
+      }
+
+      // Вызовите в консоли браузера (F12 -> Console) под админом для пережатия старых фото
+      async function compressAndOptimizeAllExistingPhotos() {
+        if (!isFirebaseReady || !currentAdmin) {
+          showBottomToast("Сначала войдите как админ!", "error");
+          return;
+        }
+
+        showBottomToast("Начинаем оптимизацию фото...", "success");
+        const snap = await db.collection("products").get();
+        let updatedCount = 0;
+        let failedCount = 0;
+
+        async function processImageValue(val) {
+          if (!val || typeof val !== "string") return val;
+
+          let blob;
+          if (val.startsWith("data:")) {
+            const res = await fetch(val);
+            blob = await res.blob();
+          } else if (val.startsWith("http://") || val.startsWith("https://")) {
+            try {
+              const res = await fetch(val);
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              blob = await res.blob();
+            } catch (e) {
+              console.warn(
+                "Не удалось скачать картинку по ссылке (возможно CORS):",
+                val,
+                e,
+              );
+              return val;
+            }
+          } else {
+            return val;
+          }
+
+          const file = new File([blob], "temp.jpg", {
+            type: blob.type || "image/jpeg",
+          });
+          const compressed = await compressImageFile(file, 650);
+          if (val.startsWith("data:") && compressed.length >= val.length) {
+            return val;
+          }
+          return compressed;
+        }
+
+        for (const doc of snap.docs) {
+          const data = doc.data();
+          const updates = {};
+
+          try {
+            if (data.photo) {
+              const newPhoto = await processImageValue(data.photo);
+              if (newPhoto !== data.photo) updates.photo = newPhoto;
+            }
+            if (data.locationPhoto) {
+              const newLoc = await processImageValue(data.locationPhoto);
+              if (newLoc !== data.locationPhoto) updates.locationPhoto = newLoc;
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await doc.ref.update(updates);
+              updatedCount++;
+              console.log(`Товар ${doc.id} успешно обновлён`);
+            }
+          } catch (err) {
+            console.error(`Ошибка при обработке товара ${doc.id}:`, err);
+            failedCount++;
+          }
+        }
+
+        showBottomToast(
+          `Готово! Обновлено: ${updatedCount}, Ошибок: ${failedCount}`,
+          failedCount ? "error" : "success",
+        );
       }
 
       function resetImageInputs() {
@@ -1312,6 +1395,9 @@
           payload,
         });
         setPendingQueue(queue);
+        if (!navigator.onLine) {
+          showBottomToast("Сохранено в офлайн-очередь", "success");
+        }
         flushPendingQueue();
       }
 
