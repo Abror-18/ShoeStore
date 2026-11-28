@@ -6,11 +6,10 @@
     <title>Обувной Магазин</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (без Storage) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
@@ -590,7 +589,6 @@
 
       const db = isFirebaseReady ? firebase.firestore() : null;
       const auth = isFirebaseReady ? firebase.auth() : null;
-      const storage = isFirebaseReady ? firebase.storage() : null;
 
       const TYPES = ["Кроссовки", "Ботинки", "Туфли", "Балетки"];
       const GENDERS = ["М", "Д"];
@@ -1022,7 +1020,8 @@
         );
       }
 
-      function compressImageFile(file, maxDimension = 1000) {
+      // УСИЛЕННОЕ СЖАТИЕ ДЛЯ BASE64 (до ~30-50 КБ)
+      function compressImageFile(file, maxDimension = 650) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
@@ -1049,19 +1048,19 @@
               const ctx = canvas.getContext("2d");
               ctx.drawImage(img, 0, 0, width, height);
 
-              let quality = 0.8;
+              let quality = 0.65;
               let dataUrl = canvas.toDataURL("image/jpeg", quality);
 
               const getKbSize = (str) =>
                 Math.round((str.length * (3 / 4)) / 1024);
 
-              while (getKbSize(dataUrl) > 100 && quality > 0.25) {
+              while (getKbSize(dataUrl) > 50 && quality > 0.25) {
                 quality -= 0.05;
                 dataUrl = canvas.toDataURL("image/jpeg", quality);
               }
 
-              if (getKbSize(dataUrl) > 100 && maxDimension > 500) {
-                resolve(compressImageFile(file, maxDimension - 150));
+              if (getKbSize(dataUrl) > 50 && maxDimension > 400) {
+                resolve(compressImageFile(file, maxDimension - 100));
                 return;
               }
 
@@ -1180,110 +1179,7 @@
       }
 
       // ==========================================
-      // FIREBASE STORAGE И ПЕРЕНОС ФОТО
-      // ==========================================
-      function dataUrlToBlob(dataUrl) {
-        const parts = dataUrl.split(",");
-        const mimeMatch = parts[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-        const binary = atob(parts[1]);
-        const len = binary.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        return new Blob([bytes], { type: mime });
-      }
-
-      function isAlreadyInFirebaseStorage(url) {
-        if (!url || typeof url !== "string") return false;
-        return (
-          url.includes("firebasestorage.googleapis.com") ||
-          url.includes("storage.googleapis.com")
-        );
-      }
-
-      async function resolveImageToStorageUrl(value, docId, fieldName) {
-        if (!value || typeof value !== "string") return "";
-        if (isAlreadyInFirebaseStorage(value)) return value;
-        if (!isFirebaseReady || !storage) return value;
-
-        let blob;
-        if (value.startsWith("data:")) {
-          blob = dataUrlToBlob(value);
-        } else if (
-          value.startsWith("http://") ||
-          value.startsWith("https://")
-        ) {
-          const response = await fetch(value);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status} при скачивании фото`);
-          }
-          blob = await response.blob();
-        } else {
-          return value;
-        }
-
-        const ext =
-          blob.type && blob.type.includes("png")
-            ? "png"
-            : blob.type && blob.type.includes("webp")
-              ? "webp"
-              : "jpg";
-        const path = `products/${docId}/${fieldName}_${Date.now()}.${ext}`;
-        const ref = storage.ref().child(path);
-        await ref.put(blob, { contentType: blob.type || "image/jpeg" });
-        return await ref.getDownloadURL();
-      }
-
-      // Вызовите в консоли браузера (F12 -> Console) под админом для переноса старых фото
-      async function migrateAllPhotosToStorage() {
-        if (!isFirebaseReady || !storage || !currentAdmin) {
-          showBottomToast("Нужен вход админа и подключённый Storage", "error");
-          return;
-        }
-
-        const snap = await db.collection("products").get();
-        let migrated = 0;
-        let failed = 0;
-
-        for (const doc of snap.docs) {
-          const data = doc.data();
-          const updates = {};
-
-          for (const field of ["photo", "locationPhoto"]) {
-            const val = data[field];
-            if (val && !isAlreadyInFirebaseStorage(val)) {
-              try {
-                updates[field] = await resolveImageToStorageUrl(
-                  val,
-                  doc.id,
-                  field,
-                );
-              } catch (err) {
-                console.warn(
-                  `Не удалось перенести ${field} у товара ${doc.id}:`,
-                  err,
-                );
-                failed++;
-              }
-            }
-          }
-
-          if (Object.keys(updates).length > 0) {
-            await doc.ref.update(updates);
-            migrated++;
-          }
-        }
-
-        showBottomToast(
-          `Перенесено товаров: ${migrated}${failed ? `, ошибок: ${failed}` : ""}`,
-          failed ? "error" : "success",
-        );
-      }
-
-      // ==========================================
-      // ОЧЕРЕДЬ И УВЕДОМЛЕНИЯ
+      // ОЧЕРЕДЬ И УВЕДОМЛЕНИЯ (BASE64)
       // ==========================================
       const QUEUE_KEY = "my_shoes_pending_queue";
       let toastTimer = null;
@@ -1335,33 +1231,14 @@
         const remaining = [];
         for (const task of queue) {
           try {
-            const targetId =
-              task.productId || db.collection("products").doc().id;
-            const photoUrl = await resolveImageToStorageUrl(
-              task.payload.photo,
-              targetId,
-              "photo",
-            );
-            const locationPhotoUrl = await resolveImageToStorageUrl(
-              task.payload.locationPhoto,
-              targetId,
-              "locationPhoto",
-            );
-
-            const finalPayload = {
-              ...task.payload,
-              photo: photoUrl,
-              locationPhoto: locationPhotoUrl,
-            };
-
             if (task.mode === "update" && task.productId) {
               await db
                 .collection("products")
                 .doc(task.productId)
-                .update(finalPayload);
+                .update(task.payload);
               showBottomToast("Изменено", "success");
             } else {
-              await db.collection("products").doc(targetId).set(finalPayload);
+              await db.collection("products").add(task.payload);
               showBottomToast("Отправлено", "success");
             }
           } catch (err) {
