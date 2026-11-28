@@ -1,4 +1,4 @@
-const CACHE_NAME = "shoe-store-v5";
+const CACHE_NAME = "shoe-store-v7";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -13,9 +13,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(PRECACHE_ASSETS);
-      })
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting()),
   );
 });
@@ -24,15 +22,15 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => {
-        return Promise.all(
+      .then((keys) =>
+        Promise.all(
           keys.map((key) => {
             if (key !== CACHE_NAME) {
               return caches.delete(key);
             }
           }),
-        );
-      })
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });
@@ -42,6 +40,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
+  // Обработка картинок
   if (
     event.request.destination === "image" ||
     url.pathname.match(/\.(png|jpg|jpeg|svg|webp)$/i)
@@ -55,7 +54,8 @@ self.addEventListener("fetch", (event) => {
           return fetch(event.request)
             .then((networkResponse) => {
               if (networkResponse && networkResponse.status === 200) {
-                cache.put(event.request, networkResponse.clone());
+                const responseToCache = networkResponse.clone();
+                cache.put(event.request, responseToCache);
               }
               return networkResponse;
             })
@@ -68,20 +68,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Обработка остальных ресурсов (HTML/JS/Manifest)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse.clone());
+              cache.put(event.request, responseToCache);
             });
           }
           return networkResponse;
         })
-        .catch(() => {
-          return cachedResponse;
-        });
+        .catch(() => cachedResponse);
 
       return cachedResponse || fetchPromise;
     }),
