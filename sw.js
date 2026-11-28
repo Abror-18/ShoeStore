@@ -1,10 +1,9 @@
-const CACHE_NAME = "shoe-store-v4";
+const CACHE_NAME = "shoe-store-v5";
 
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "https://cdn.tailwindcss.com",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js",
