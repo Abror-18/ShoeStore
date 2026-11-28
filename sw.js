@@ -1,4 +1,4 @@
-const CACHE_NAME = "shoe-store-v3";
+const CACHE_NAME = "shoe-store-v4";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -8,7 +8,6 @@ const PRECACHE_ASSETS = [
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js",
   "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js",
-  "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js",
 ];
 
 self.addEventListener("install", (event) => {
