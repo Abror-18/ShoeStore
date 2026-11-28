@@ -1,4 +1,4 @@
-const CACHE_NAME = "shoe-store-v3";
+const CACHE_NAME = "shoe-store-v2";
 
 // Ресурсы для обязательной предзагрузки при установке PWA
 const PRECACHE_ASSETS = [
@@ -23,7 +23,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// 2. Активация: удаляем старые версии кэша при обновлении CACHE_NAME
+// 2. Активация: удаляем старые версии кэша, если версия обновилась
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Для изображений: берем из кэша, если нет — загружаем и сохраняем
+  // Для внешних изображений (например, фото товаров из Unsplash или Firebase Storage)
   if (
     event.request.destination === "image" ||
     url.pathname.match(/\.(png|jpg|jpeg|svg|webp)$/i)
@@ -56,8 +56,10 @@ self.addEventListener("fetch", (event) => {
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
+            // Если фото есть в кэше — отдаём мгновенно
             return cachedResponse;
           }
+          // Если фото нет — загружаем и сохраняем в кэш
           return fetch(event.request)
             .then((networkResponse) => {
               if (networkResponse && networkResponse.status === 200) {
@@ -66,8 +68,7 @@ self.addEventListener("fetch", (event) => {
               return networkResponse;
             })
             .catch(() => {
-              // При отсутствии сети и кэша возвращаем безопасный Response со статусом 504
-              return new Response("", { status: 504, statusText: "Offline" });
+              // Если сети нет и картинки в кэше нет — игнорируем
             });
         });
       }),
@@ -75,7 +76,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Для HTML/JS/CSS: отдаем мгновенно из кэша и параллельно обновляем из сети
+  // Для остального (HTML, Tailwind, JS библиотеки): отдаём из кэша и обновляем в фоне
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
@@ -88,7 +89,7 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         })
         .catch(() => {
-          return cachedResponse;
+          // Ошибка сети — ничего страшного, отдадим кэш
         });
 
       return cachedResponse || fetchPromise;
